@@ -1,0 +1,40 @@
+<div class="min-h-screen flex items-center justify-center bg-base-200">
+  <div class="card w-full max-w-sm bg-base-100 shadow-xl">
+    <div class="card-body">
+      <h2 class="card-title text-2xl font-bold mb-4">修改密码</h2>
+
+      <% if flash[:alert] %>
+        <div role="alert" class="alert alert-error mb-4">
+          <span><%= flash[:alert] %></span>
+        </div>
+      <% end %>
+
+      <% if flash[:notice] %>
+        <div role="alert" class="alert alert-success mb-4">
+          <span><%= flash[:notice] %></span>
+        </div>
+      <% end %>
+
+      <%= form_with url: password_path, method: :patch do |f| %>
+        <fieldset class="fieldset">
+          <label class="fieldset-label" for="current_password">当前密码</label>
+          <%= f.password_field :current_password, id: "current_password", class: "input input-bordered w-full", placeholder: "请输入当前密码", required: true %>
+        </fieldset>
+
+        <fieldset class="fieldset mt-3">
+          <label class="fieldset-label" for="password">新密码</label>
+          <%= f.password_field :password, id: "password", class: "input input-bordered w-full", placeholder: "至少 8 位", required: true %>
+        </fieldset>
+
+        <fieldset class="fieldset mt-3">
+          <label class="fieldset-label" for="password_confirmation">确认新密码</label>
+          <%= f.password_field :password_confirmation, id: "password_confirmation", class: "input input-bordered w-full", placeholder: "再次输入新密码", required: true %>
+        </fieldset>
+
+        <div class="mt-6">
+          <%= f.submit "保存修改", class: "btn btn-primary w-full" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
