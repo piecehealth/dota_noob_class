@@ -2,6 +2,7 @@
   "name": "app",
   "private": true,
   "devDependencies": {
+    "daisyui": "^5.5.19",
     "esbuild": "^0.27.3"
   },
   "scripts": {
