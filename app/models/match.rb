@@ -1,6 +1,8 @@
 class Match < ApplicationRecord
   belongs_to :user
 
+  has_one :coaching_request, dependent: :destroy
+
   serialize :raw_data, coder: JSON
 
   enum :source, { system_pull: 0, maintainer_upload: 1, user_sync: 2 }

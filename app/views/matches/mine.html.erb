@@ -3,7 +3,7 @@
     <div class="p-4 sm:p-8">
       <h1 class="text-2xl font-bold mb-6">我的对战记录</h1>
 
-      <%= render "matches/match_list", matches: @matches %>
+      <%= render "matches/match_list", matches: @matches, weekly_limit_reached: @weekly_limit_reached %>
 
       <%= paginate @matches %>
     </div>

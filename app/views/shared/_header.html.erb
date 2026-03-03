@@ -18,7 +18,7 @@
           <button class="btn btn-ghost btn-xs sm:btn-sm btn-disabled opacity-40" disabled>我的指导</button>
         <% elsif current_user.coach? %>
           <%= link_to "我的班级", mine_classrooms_path, class: "btn btn-ghost btn-xs sm:btn-sm" %>
-          <button class="btn btn-ghost btn-xs sm:btn-sm btn-disabled opacity-40" disabled>指导请求</button>
+          <%= link_to "指导请求", coaching_requests_path, class: "btn btn-ghost btn-xs sm:btn-sm" %>
         <% end %>
 
         <%= button_to session_path, method: :delete,

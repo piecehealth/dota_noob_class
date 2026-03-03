@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@import "./actiontext.css";
 @plugin "daisyui" {
   themes: light --default, dark --prefersdark, cupcake;
 }
+
+/* Hide Trix file upload button */
+trix-toolbar .trix-button-group--file-tools { display: none; }

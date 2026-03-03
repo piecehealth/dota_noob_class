@@ -47,8 +47,18 @@
           <div class="text-xs text-base-content/40"><%= match.played_at.strftime("%m/%d %H:%M") %></div>
         </div>
 
-        <%# Request coaching button %>
-        <button class="btn btn-sm btn-outline btn-primary shrink-0" disabled>请求指导</button>
+        <%# Coaching request button %>
+        <% if match.coaching_request.present? %>
+          <%= link_to "查看指导", match_coaching_request_path(match),
+                class: "btn btn-sm btn-primary shrink-0" %>
+        <% elsif defined?(weekly_limit_reached) && weekly_limit_reached %>
+          <div class="tooltip tooltip-left shrink-0" data-tip="本周已达上限">
+            <button class="btn btn-sm btn-outline btn-primary" disabled>请求指导</button>
+          </div>
+        <% else %>
+          <%= button_to "请求指导", match_coaching_request_path(match),
+                method: :post, class: "btn btn-sm btn-outline btn-primary shrink-0" %>
+        <% end %>
       </div>
     <% end %>
   </div>

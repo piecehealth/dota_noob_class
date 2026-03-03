@@ -1,0 +1,126 @@
+<div class="py-6 px-3 sm:px-6">
+  <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+    <div class="p-4 sm:p-8 flex flex-col gap-6">
+
+      <%# Match summary %>
+      <% hero = Hero.find_by_id(@match.hero_id) %>
+      <% hero_key = hero&.name&.sub("npc_dota_hero_", "") %>
+      <div class="flex items-center gap-4">
+        <div class="w-16 h-16 shrink-0 rounded-xl overflow-hidden bg-base-200">
+          <% if hero_key %>
+            <%= image_tag "heros/#{hero_key}.png", class: "w-full h-full object-cover", alt: hero&.cn_name %>
+          <% else %>
+            <div class="w-full h-full flex items-center justify-center text-xs text-base-content/40">?</div>
+          <% end %>
+        </div>
+        <div>
+          <div class="font-bold text-lg"><%= hero&.cn_name || "未知英雄" %></div>
+          <div class="flex items-center gap-2 text-sm text-base-content/60">
+            <span class="badge <%= @match.won? ? 'badge-success' : 'badge-error' %> font-bold">
+              <%= @match.won? ? "胜" : "负" %>
+            </span>
+            <span class="font-mono">
+              <span class="text-success font-bold"><%= @match.kills %></span>
+              <span class="text-base-content/30">/</span>
+              <span class="text-error font-bold"><%= @match.deaths %></span>
+              <span class="text-base-content/30">/</span>
+              <span class="text-info font-bold"><%= @match.assists %></span>
+            </span>
+            <span><%= format_duration(@match.duration) %></span>
+            <span class="font-mono text-xs text-base-content/40">#<%= @match.match_id %></span>
+          </div>
+        </div>
+      </div>
+
+      <%# Status + actions %>
+      <div class="flex items-center gap-3 flex-wrap">
+        <% status_class = case @coaching_request.status
+           when "requested"   then "badge-warning"
+           when "in_progress" then "badge-info"
+           when "completed"   then "badge-success"
+           end %>
+        <span class="badge <%= status_class %> badge-lg font-semibold">
+          <%= { "requested" => "待认领", "in_progress" => "指导中", "completed" => "已完成" }[@coaching_request.status] %>
+        </span>
+
+        <% if @coaching_request.coach %>
+          <span class="text-sm text-base-content/60">教练：<%= @coaching_request.coach.display_name %></span>
+        <% end %>
+
+        <div class="ml-auto flex gap-2">
+          <% if current_user.coach? && @coaching_request.requested? %>
+            <%= button_to "认领", claim_match_coaching_request_path(@match),
+                  method: :patch, class: "btn btn-sm btn-primary" %>
+          <% end %>
+          <% if (@coaching_request.in_progress?) && (current_user.coach? || current_user.student?) %>
+            <%= button_to "完成", complete_match_coaching_request_path(@match),
+                  method: :patch, class: "btn btn-sm btn-success" %>
+          <% end %>
+          <% if current_user.student? && @coaching_request.completed? %>
+            <%= button_to "重新开启", reopen_match_coaching_request_path(@match),
+                  method: :patch, class: "btn btn-sm btn-outline" %>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Event timeline %>
+      <% if @events.any? %>
+        <div>
+          <h2 class="font-bold text-base mb-3">状态记录</h2>
+          <ul class="flex flex-col gap-2">
+            <% status_labels = { "requested" => "待认领", "in_progress" => "指导中", "completed" => "已完成" } %>
+            <% @events.each do |event| %>
+              <li class="flex items-center gap-2 text-sm text-base-content/60">
+                <span class="w-28 shrink-0 font-mono text-xs text-base-content/40">
+                  <%= event.created_at.strftime("%m/%d %H:%M") %>
+                </span>
+                <span><%= event.operator.display_name %></span>
+                <span class="text-base-content/30">·</span>
+                <span><%= status_labels[event.from_status] %></span>
+                <span>→</span>
+                <span class="font-semibold text-base-content/80"><%= status_labels[event.to_status] %></span>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <%# Comments %>
+      <div>
+        <h2 class="font-bold text-base mb-3">评论</h2>
+
+        <% if @comments.any? %>
+          <div class="flex flex-col gap-3 mb-4">
+            <% @comments.each do |comment| %>
+              <% is_mine = comment.user_id == current_user.id %>
+              <div class="chat <%= is_mine ? 'chat-end' : 'chat-start' %>">
+                <div class="chat-header text-xs text-base-content/50 mb-1">
+                  <%= comment.user.display_name %>
+                  <time class="ml-1"><%= comment.created_at.strftime("%m/%d %H:%M") %></time>
+                </div>
+                <div class="chat-bubble chat-bubble-primary prose prose-sm max-w-none">
+                  <%= comment.body %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-sm text-base-content/40 mb-4">暂无评论</p>
+        <% end %>
+
+        <%# Comment form %>
+        <%= form_with model: [@match, @coaching_request, @comment],
+              url: match_coaching_request_comments_path(@match),
+              class: "flex flex-col gap-3" do |f| %>
+          <div>
+            <%= f.rich_textarea :body,
+                  class: "trix-content border border-base-300 rounded-lg min-h-[120px]",
+                  placeholder: "写下你的指导意见或问题…" %>
+          </div>
+          <%= f.submit "发布评论", class: "btn btn-primary btn-sm self-end" %>
+        <% end %>
+      </div>
+
+    </div>
+  </div>
+</div>

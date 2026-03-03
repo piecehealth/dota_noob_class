@@ -7,6 +7,8 @@ class User < ApplicationRecord
   belongs_to :classroom, optional: true
   belongs_to :group, optional: true
   has_many :matches, dependent: :destroy
+  has_many :coaching_requests_as_student, class_name: "CoachingRequest", foreign_key: :student_id, dependent: :destroy
+  has_many :coaching_requests_as_coach,   class_name: "CoachingRequest", foreign_key: :coach_id,   dependent: :nullify
 
   validates :display_name, presence: true
   validates :dota2_player_id, presence: true, if: :student?

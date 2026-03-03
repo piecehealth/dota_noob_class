@@ -23,9 +23,19 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :coaching_requests, only: [ :index ]
+
   resources :matches, only: [] do
     collection do
       get :mine
+    end
+    scope module: "matches" do
+      resource :coaching_request, only: [ :show, :create ] do
+        patch :claim
+        patch :complete
+        patch :reopen
+        resources :comments, only: [ :create ]
+      end
     end
   end
 
