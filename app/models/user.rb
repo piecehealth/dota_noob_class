@@ -6,6 +6,7 @@ class User < ApplicationRecord
 
   belongs_to :classroom, optional: true
   belongs_to :group, optional: true
+  has_many :matches, dependent: :destroy
 
   validates :display_name, presence: true
   validates :dota2_player_id, presence: true, if: :student?
@@ -20,6 +21,7 @@ class User < ApplicationRecord
   ROLE_NAMES = { "student" => "学员", "coach" => "教练", "assistant" => "辅导员" }.freeze
 
   def activated? = activated_at.present?
+  def admin? = is_admin?
 
   def role_name = ROLE_NAMES[role]
 

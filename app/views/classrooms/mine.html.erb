@@ -1,0 +1,63 @@
+<div class="py-6 px-3 sm:px-6">
+  <div class="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+    <div class="p-4 sm:p-8">
+      <h1 class="text-2xl font-bold mb-6">我的班级</h1>
+
+      <div role="tablist" class="tabs tabs-border">
+        <% @groups.each_with_index do |group, i| %>
+          <input type="radio" name="classroom_tabs" class="tab"
+                 aria-label="第 <%= group.number %> 组<%= group.id == current_user.group_id ? ' · 本组' : '' %>"
+                 <%= i == 0 ? "checked" : "" %> />
+
+          <div class="tab-content p-4">
+            <% students = @students_by_group[group] %>
+            <% if students.empty? %>
+              <p class="text-base-content/50 text-sm">本组暂无学员</p>
+            <% else %>
+              <div class="flex flex-col gap-4">
+                <% students.each do |student| %>
+                  <% recent_matches = student.matches.sort_by { |m| -m.played_at.to_i }.first(10) %>
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <%# Student info %>
+                    <div class="w-28 shrink-0">
+                      <%= link_to matches_user_path(student),
+                            class: "font-semibold text-sm truncate hover:text-primary transition-colors block" do %>
+                        <%= student.display_name %>
+                      <% end %>
+                      <div class="text-xs text-base-content/40 font-mono"><%= student.dota2_player_id %></div>
+                    </div>
+
+                    <%# Mini match chips %>
+                    <% if recent_matches.empty? %>
+                      <span class="text-xs text-base-content/30">暂无记录</span>
+                    <% else %>
+                      <div class="flex gap-1 flex-wrap">
+                        <% recent_matches.each do |match| %>
+                          <% hero = Hero.find_by_id(match.hero_id) %>
+                          <% hero_key = hero&.name&.sub("npc_dota_hero_", "") %>
+                          <div class="tooltip tooltip-bottom"
+                               data-tip="<%= hero&.cn_name %> <%= match.kills %>/<%= match.deaths %>/<%= match.assists %>">
+                            <div class="w-9 h-9 rounded-lg overflow-hidden ring-2 <%= match.won? ? 'ring-success' : 'ring-error' %>">
+                              <% if hero_key %>
+                                <%= image_tag "heros/#{hero_key}.png",
+                                      class: "w-full h-full object-cover",
+                                      alt: hero&.cn_name %>
+                              <% else %>
+                                <div class="w-full h-full bg-base-200 flex items-center justify-center text-xs">?</div>
+                              <% end %>
+                            </div>
+                          </div>
+                        <% end %>
+                      </div>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+
+    </div>
+  </div>
+</div>

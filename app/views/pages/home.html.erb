@@ -1,0 +1,67 @@
+<div class="py-6 px-3 sm:px-6">
+  <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+
+    <%# Poster %>
+    <div class="w-full">
+      <%= image_tag "poster.png", class: "w-full object-cover", alt: "Dota Noob Class" %>
+    </div>
+
+    <div class="p-4 sm:p-8 space-y-12">
+
+      <%# 排名前十 %>
+      <section>
+        <h2 class="text-xl font-bold mb-4">排名前十</h2>
+        <div class="space-y-2">
+          <% @top_players.each_with_index do |player, i| %>
+            <div class="flex items-center gap-2">
+              <span class="w-5 text-right text-sm font-bold text-base-content/50"><%= i + 1 %></span>
+              <span class="w-24 text-sm truncate"><%= player[:name] %></span>
+              <div class="flex-1 bg-base-200 rounded-full h-4">
+                <div class="bg-green-500 h-4 rounded-full transition-all" style="width: <%= player[:pct] %>%"></div>
+              </div>
+              <span class="text-sm font-mono text-base-content/70 w-8 text-right"><%= player[:score] %></span>
+            </div>
+          <% end %>
+        </div>
+      </section>
+
+      <%# 汗水墙 %>
+      <section>
+        <div class="flex flex-wrap items-baseline gap-x-4 gap-y-2 mb-4">
+          <h2 class="text-xl font-bold">汗水墙</h2>
+          <span class="text-sm text-base-content/50">最近 4 周每日对战场次</span>
+          <div class="flex items-center gap-1.5 text-xs text-base-content/50 ml-auto">
+            <span>少</span>
+            <div class="w-3 h-3 rounded-sm bg-base-200"></div>
+            <div class="w-3 h-3 rounded-sm bg-green-200"></div>
+            <div class="w-3 h-3 rounded-sm bg-green-300"></div>
+            <div class="w-3 h-3 rounded-sm bg-green-400"></div>
+            <div class="w-3 h-3 rounded-sm bg-green-600"></div>
+            <div class="w-3 h-3 rounded-sm bg-green-800"></div>
+            <span>多</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <% @classrooms_data.each do |classroom| %>
+            <div class="border border-base-200 rounded-xl p-3">
+              <h3 class="text-xs font-bold text-base-content/50 mb-2">第 <%= classroom[:number] %> 班</h3>
+              <% classroom[:groups].each do |group| %>
+                <% group[:players].each do |player| %>
+                  <div class="flex items-center gap-1 mb-1">
+                    <span class="text-xs text-base-content/70 w-16 shrink-0 truncate"><%= player[:name] %></span>
+                    <div class="flex gap-px">
+                      <% player[:contributions].each do |count| %>
+                        <div class="w-3 h-3 rounded-sm <%= contribution_color(count) %>" title="<%= count %> 场"></div>
+                      <% end %>
+                    </div>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>

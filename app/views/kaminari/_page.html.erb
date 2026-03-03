@@ -1,0 +1,5 @@
+<% if page.current? %>
+  <button class="join-item btn btn-active btn-primary"><%= page %></button>
+<% else %>
+  <%= link_to page, url, rel: page.rel, remote: remote, class: "join-item btn" %>
+<% end %>

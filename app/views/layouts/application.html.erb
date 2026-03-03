@@ -23,7 +23,8 @@
     <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
   </head>
 
-  <body data-theme="cupcake">
+  <body class="min-h-screen bg-primary" data-theme="cupcake">
+    <%= render "shared/header" %>
     <%= yield %>
   </body>
 </html>

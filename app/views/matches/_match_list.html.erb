@@ -1,0 +1,55 @@
+<% if matches.empty? %>
+  <div class="alert">暂无对战记录</div>
+<% else %>
+  <div class="flex flex-col gap-3">
+    <% matches.each do |match| %>
+      <% hero = Hero.find_by_id(match.hero_id) %>
+      <% hero_key = hero&.name&.sub("npc_dota_hero_", "") %>
+      <div class="flex items-center gap-3 sm:gap-4 p-3 rounded-xl border border-base-200 hover:bg-base-50">
+        <%# Hero portrait %>
+        <div class="w-14 h-14 shrink-0 rounded-lg overflow-hidden bg-base-200">
+          <% if hero_key %>
+            <%= image_tag "heros/#{hero_key}.png", class: "w-full h-full object-cover", alt: hero&.cn_name %>
+          <% else %>
+            <div class="w-full h-full flex items-center justify-center text-xs text-base-content/40">?</div>
+          <% end %>
+        </div>
+
+        <%# Hero name + team + match id %>
+        <div class="min-w-[90px]">
+          <div class="font-semibold text-sm"><%= hero&.cn_name || "未知英雄" %></div>
+          <div class="text-xs text-base-content/50"><%= match.on_radiant? ? "天辉" : "夜魇" %></div>
+          <div class="text-xs text-base-content/30 font-mono">#<%= match.match_id %></div>
+        </div>
+
+        <%# Win/loss badge %>
+        <span class="badge <%= match.won? ? 'badge-success' : 'badge-error' %> font-bold">
+          <%= match.won? ? "胜" : "负" %>
+        </span>
+
+        <%# Game type %>
+        <span class="badge badge-sm hidden sm:inline-flex <%= lobby_type_badge_class(match.lobby_type) %>">
+          <%= match.lobby_type_name %>
+        </span>
+
+        <%# KDA %>
+        <div class="text-sm font-mono hidden sm:block">
+          <span class="text-success font-bold"><%= match.kills %></span>
+          <span class="text-base-content/30">/</span>
+          <span class="text-error font-bold"><%= match.deaths %></span>
+          <span class="text-base-content/30">/</span>
+          <span class="text-info font-bold"><%= match.assists %></span>
+        </div>
+
+        <%# Duration + date %>
+        <div class="ml-auto text-right">
+          <div class="text-sm text-base-content/70"><%= format_duration(match.duration) %></div>
+          <div class="text-xs text-base-content/40"><%= match.played_at.strftime("%m/%d %H:%M") %></div>
+        </div>
+
+        <%# Request coaching button %>
+        <button class="btn btn-sm btn-outline btn-primary shrink-0" disabled>请求指导</button>
+      </div>
+    <% end %>
+  </div>
+<% end %>

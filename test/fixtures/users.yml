@@ -1,0 +1,43 @@
+# 未激活学员（无 username / activated_at）
+pending:
+  display_name: 张三丰
+  password_digest: <%= BCrypt::Password.create("placeholder", cost: BCrypt::Engine::MIN_COST) %>
+  role: 0
+  classroom: first
+  group: first
+  dota2_player_id: "111111111"
+  activation_token: validtoken00001
+
+# 教练
+coach_bob:
+  display_name: 王教练
+  username: bob
+  password_digest: <%= BCrypt::Password.create("password123", cost: BCrypt::Engine::MIN_COST) %>
+  role: 1
+  classroom: first
+  group: first
+  activation_token: usedtoken00003
+  activated_at: "2026-01-01 00:00:00"
+
+# 管理员（assistant 角色 + is_admin）
+admin_eve:
+  display_name: 管理员Eve
+  username: eve
+  password_digest: <%= BCrypt::Password.create("password123", cost: BCrypt::Engine::MIN_COST) %>
+  role: 2
+  is_admin: true
+  classroom: first
+  activation_token: usedtoken00004
+  activated_at: "2026-01-01 00:00:00"
+
+# 已激活学员
+alice:
+  display_name: 李晓明
+  username: alice
+  password_digest: <%= BCrypt::Password.create("password123", cost: BCrypt::Engine::MIN_COST) %>
+  role: 0
+  classroom: first
+  group: first
+  dota2_player_id: "222222222"
+  activation_token: usedtoken00002
+  activated_at: "2026-01-01 00:00:00"

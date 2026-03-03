@@ -126,7 +126,7 @@ class Hero
     { id: 137, name: "npc_dota_hero_primal_beast", en_name: "Primal Beast", cn_name: "獸" },
     { id: 138, name: "npc_dota_hero_muerta", en_name: "Muerta", cn_name: "琼英碧灵" },
     { id: 145, name: "npc_dota_hero_kez", en_name: "Kez", cn_name: "凯" },
-    { id: 155, name: "npc_dota_hero_largo", en_name: "Largo", cn_name: "拉戈" }
+    { id: 155, name: "npc_dota_hero_largo", en_name: "Largo", cn_name: "朗戈" }
   ]
 
   class << self

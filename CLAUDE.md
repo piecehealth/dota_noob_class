@@ -40,7 +40,7 @@
 
 - 所有 UI 组件使用 DaisyUI 5.x class（参考 [docs/ARCH/daisyui-components.md](docs/ARCH/daisyui-components.md)），不手写重复样式
 - 布局用 Tailwind 工具类，不写自定义 CSS（除非必要）
-- 响应式优先，移动端可用
+- 响应式优先，**所有页面必须移动设备可用**（手机端优先验证）
 
 ### 数据库 / 模型
 
