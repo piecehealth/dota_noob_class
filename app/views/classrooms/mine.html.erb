@@ -20,11 +20,17 @@
                   <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                     <%# Student info %>
                     <div class="w-28 shrink-0">
-                      <%= link_to matches_user_path(student),
-                            class: "font-semibold text-sm truncate hover:text-primary transition-colors block" do %>
-                        <%= student.display_name %>
-                      <% end %>
-                      <div class="text-xs text-base-content/40 font-mono"><%= student.dota2_player_id %></div>
+                      <div class="font-semibold text-sm truncate"><%= student.display_name %></div>
+                      <div class="text-xs text-base-content/40 font-mono mb-1"><%= student.dota2_player_id %></div>
+                      <div class="flex flex-col gap-0.5">
+                        <%= link_to "对局详情", matches_user_path(student),
+                              class: "text-xs text-primary hover:underline" %>
+                        <% open_count = @open_cr_counts[student.id].to_i %>
+                        <%= link_to coaching_requests_user_path(student),
+                              class: "text-xs text-primary hover:underline" do %>
+                          复盘记录<%= open_count > 0 ? "（#{open_count}）" : "" %>
+                        <% end %>
+                      </div>
                     </div>
 
                     <%# Mini match chips %>

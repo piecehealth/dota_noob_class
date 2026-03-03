@@ -1,10 +1,10 @@
 <div class="py-6 px-3 sm:px-6">
   <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
     <div class="p-4 sm:p-8">
-      <h1 class="text-2xl font-bold mb-6">指导请求</h1>
+      <h1 class="text-2xl font-bold mb-6">复盘请求</h1>
 
       <% if @coaching_requests.empty? %>
-        <div class="alert">暂无待处理的指导请求</div>
+        <div class="alert">暂无待处理的复盘请求</div>
       <% else %>
         <div class="flex flex-col gap-3">
           <% @coaching_requests.each do |cr| %>
@@ -39,7 +39,7 @@
               <%# Status badge %>
               <% status_class = cr.requested? ? "badge-warning" : "badge-info" %>
               <span class="badge <%= status_class %> badge-sm">
-                <%= cr.requested? ? "待认领" : "指导中" %>
+                <%= cr.requested? ? "待认领" : "复盘中" %>
               </span>
 
               <%# Actions %>

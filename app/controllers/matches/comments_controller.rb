@@ -6,9 +6,9 @@ module Matches
     def create
       @comment = @coaching_request.comments.build(comment_params.merge(user: current_user))
       if @comment.save
-        redirect_to match_coaching_request_path(@match), notice: "评论已发布"
+        redirect_to match_coaching_request_path(@match), notice: "复盘笔记已发布"
       else
-        redirect_to match_coaching_request_path(@match), alert: "评论不能为空"
+        redirect_to match_coaching_request_path(@match), alert: "笔记内容不能为空"
       end
     end
 

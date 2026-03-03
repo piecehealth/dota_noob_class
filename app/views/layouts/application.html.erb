@@ -25,6 +25,24 @@
 
   <body class="min-h-screen bg-primary" data-theme="cupcake">
     <%= render "shared/header" %>
+
+    <% if notice %>
+      <div class="toast toast-top toast-center z-50 pt-2">
+        <div class="alert alert-success flex items-center gap-2 pr-2">
+          <span><%= notice %></span>
+          <button onclick="this.closest('.toast').remove()" class="btn btn-ghost btn-xs">✕</button>
+        </div>
+      </div>
+    <% end %>
+    <% if alert %>
+      <div class="toast toast-top toast-center z-50 pt-2">
+        <div class="alert alert-error flex items-center gap-2 pr-2">
+          <span><%= alert %></span>
+          <button onclick="this.closest('.toast').remove()" class="btn btn-ghost btn-xs">✕</button>
+        </div>
+      </div>
+    <% end %>
+
     <%= yield %>
   </body>
 </html>

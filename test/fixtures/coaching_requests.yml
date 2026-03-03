@@ -1,0 +1,16 @@
+# alice 的 win_match — 待认领
+requested_cr:
+  match: win_match
+  student: alice
+  status: 0
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>
+
+# alice 的 loss_match — 复盘中，已认领
+in_progress_cr:
+  match: loss_match
+  student: alice
+  coach: coach_bob
+  status: 1
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>

@@ -14,7 +14,8 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   resources :users, only: [] do
-    get :matches, on: :member
+    get :matches,           on: :member
+    get :coaching_requests, on: :member
   end
 
   resources :classrooms, only: [] do
@@ -23,7 +24,11 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :coaching_requests, only: [ :index ]
+  resources :coaching_requests, only: [ :index ] do
+    collection do
+      get :mine
+    end
+  end
 
   resources :matches, only: [] do
     collection do
@@ -34,6 +39,7 @@ Rails.application.routes.draw do
         patch :claim
         patch :complete
         patch :reopen
+        delete :cancel
         resources :comments, only: [ :create ]
       end
     end

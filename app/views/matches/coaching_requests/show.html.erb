@@ -40,7 +40,7 @@
            when "completed"   then "badge-success"
            end %>
         <span class="badge <%= status_class %> badge-lg font-semibold">
-          <%= { "requested" => "待认领", "in_progress" => "指导中", "completed" => "已完成" }[@coaching_request.status] %>
+          <%= { "requested" => "待认领", "in_progress" => "复盘中", "completed" => "已完成" }[@coaching_request.status] %>
         </span>
 
         <% if @coaching_request.coach %>
@@ -48,11 +48,16 @@
         <% end %>
 
         <div class="ml-auto flex gap-2">
+          <% if current_user.student? && @coaching_request.requested? && @coaching_request.student == current_user %>
+            <%= button_to "关闭申请", cancel_match_coaching_request_path(@match),
+                  method: :delete, class: "btn btn-sm btn-outline btn-error",
+                  data: { turbo_confirm: "确认关闭这条复盘请求？" } %>
+          <% end %>
           <% if current_user.coach? && @coaching_request.requested? %>
             <%= button_to "认领", claim_match_coaching_request_path(@match),
                   method: :patch, class: "btn btn-sm btn-primary" %>
           <% end %>
-          <% if (@coaching_request.in_progress?) && (current_user.coach? || current_user.student?) %>
+          <% if @coaching_request.in_progress? && (current_user.coach? || current_user.student?) %>
             <%= button_to "完成", complete_match_coaching_request_path(@match),
                   method: :patch, class: "btn btn-sm btn-success" %>
           <% end %>
@@ -68,7 +73,7 @@
         <div>
           <h2 class="font-bold text-base mb-3">状态记录</h2>
           <ul class="flex flex-col gap-2">
-            <% status_labels = { "requested" => "待认领", "in_progress" => "指导中", "completed" => "已完成" } %>
+            <% status_labels = { "requested" => "待认领", "in_progress" => "复盘中", "completed" => "已完成" } %>
             <% @events.each do |event| %>
               <li class="flex items-center gap-2 text-sm text-base-content/60">
                 <span class="w-28 shrink-0 font-mono text-xs text-base-content/40">
@@ -87,25 +92,25 @@
 
       <%# Comments %>
       <div>
-        <h2 class="font-bold text-base mb-3">评论</h2>
+        <h2 class="font-bold text-base mb-3">复盘笔记</h2>
 
         <% if @comments.any? %>
-          <div class="flex flex-col gap-3 mb-4">
+          <div class="flex flex-col divide-y divide-base-200 mb-4">
             <% @comments.each do |comment| %>
-              <% is_mine = comment.user_id == current_user.id %>
-              <div class="chat <%= is_mine ? 'chat-end' : 'chat-start' %>">
-                <div class="chat-header text-xs text-base-content/50 mb-1">
-                  <%= comment.user.display_name %>
-                  <time class="ml-1"><%= comment.created_at.strftime("%m/%d %H:%M") %></time>
+              <div class="py-3">
+                <div class="flex items-center gap-2 text-xs text-base-content/50 mb-1">
+                  <span class="font-semibold text-base-content/70"><%= comment.user.display_name %></span>
+                  <span><%= comment.user.identity_label %></span>
+                  <time class="ml-auto"><%= comment.created_at.strftime("%m/%d %H:%M") %></time>
                 </div>
-                <div class="chat-bubble chat-bubble-primary prose prose-sm max-w-none">
+                <div class="prose prose-sm max-w-none">
                   <%= comment.body %>
                 </div>
               </div>
             <% end %>
           </div>
         <% else %>
-          <p class="text-sm text-base-content/40 mb-4">暂无评论</p>
+          <p class="text-sm text-base-content/40 mb-4">暂无复盘笔记</p>
         <% end %>
 
         <%# Comment form %>
@@ -115,9 +120,9 @@
           <div>
             <%= f.rich_textarea :body,
                   class: "trix-content border border-base-300 rounded-lg min-h-[120px]",
-                  placeholder: "写下你的指导意见或问题…" %>
+                  placeholder: "写下你的复盘意见或问题…" %>
           </div>
-          <%= f.submit "发布评论", class: "btn btn-primary btn-sm self-end" %>
+          <%= f.submit "发布笔记", class: "btn btn-primary btn-sm self-end" %>
         <% end %>
       </div>
 

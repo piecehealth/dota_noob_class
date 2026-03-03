@@ -49,14 +49,14 @@
 
         <%# Coaching request button %>
         <% if match.coaching_request.present? %>
-          <%= link_to "查看指导", match_coaching_request_path(match),
+          <%= link_to "查看复盘", match_coaching_request_path(match),
                 class: "btn btn-sm btn-primary shrink-0" %>
         <% elsif defined?(weekly_limit_reached) && weekly_limit_reached %>
           <div class="tooltip tooltip-left shrink-0" data-tip="本周已达上限">
-            <button class="btn btn-sm btn-outline btn-primary" disabled>请求指导</button>
+            <button class="btn btn-sm btn-outline btn-primary" disabled>申请复盘</button>
           </div>
         <% else %>
-          <%= button_to "请求指导", match_coaching_request_path(match),
+          <%= button_to "申请复盘", match_coaching_request_path(match),
                 method: :post, class: "btn btn-sm btn-outline btn-primary shrink-0" %>
         <% end %>
       </div>
