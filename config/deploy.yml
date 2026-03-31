@@ -22,9 +22,7 @@ servers:
 #
 proxy:
   ssl: true
-  host:
-    - dota.tuilifan.com
-    - dota.ourcraft.cn
+  host: dota.ourcraft.cn
 
 # Where you keep your container images.
 registry:
