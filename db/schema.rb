@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_03_102122) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_31_143720) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -90,6 +90,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_03_102122) do
     t.index ["user_id"], name: "index_comments_on_user_id"
   end
 
+  create_table "daily_stats", force: :cascade do |t|
+    t.float "avg_kda", default: 0.0
+    t.datetime "created_at", null: false
+    t.date "date", null: false
+    t.integer "end_of_day_rank"
+    t.integer "losses_count", default: 0, null: false
+    t.integer "matches_count", default: 0, null: false
+    t.integer "rank_change", default: 0
+    t.integer "total_assists", default: 0, null: false
+    t.integer "total_deaths", default: 0, null: false
+    t.integer "total_duration", default: 0, null: false
+    t.integer "total_kills", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.integer "wins_count", default: 0, null: false
+    t.index ["date", "matches_count"], name: "index_daily_stats_on_date_and_matches_count"
+    t.index ["date"], name: "index_daily_stats_on_date"
+    t.index ["user_id", "date"], name: "index_daily_stats_on_user_id_and_date", unique: true
+    t.index ["user_id"], name: "index_daily_stats_on_user_id"
+  end
+
+  create_table "exception_tracks", force: :cascade do |t|
+    t.text "body", limit: 16777215
+    t.datetime "created_at", precision: nil, null: false
+    t.string "title"
+    t.datetime "updated_at", precision: nil, null: false
+  end
+
   create_table "groups", force: :cascade do |t|
     t.integer "classroom_id", null: false
     t.datetime "created_at", null: false
@@ -98,33 +126,73 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_03_102122) do
     t.index ["classroom_id"], name: "index_groups_on_classroom_id"
   end
 
+  create_table "match_players", force: :cascade do |t|
+    t.integer "assists", default: 0
+    t.string "award"
+    t.datetime "created_at", precision: nil, null: false
+    t.integer "deaths", default: 0
+    t.integer "hero_id"
+    t.integer "hero_variant"
+    t.integer "imp"
+    t.boolean "is_mvp"
+    t.boolean "is_svp"
+    t.integer "kills", default: 0
+    t.string "lane"
+    t.string "lane_advantage"
+    t.string "lane_outcome"
+    t.integer "leaver_status", default: 0
+    t.integer "match_id", null: false
+    t.boolean "on_radiant"
+    t.integer "party_size", default: 1
+    t.integer "player_slot"
+    t.string "position"
+    t.json "raw_data"
+    t.string "role"
+    t.integer "source", default: 0
+    t.datetime "updated_at", precision: nil, null: false
+    t.integer "user_id", null: false
+    t.boolean "won"
+  end
+
   create_table "matches", force: :cascade do |t|
-    t.integer "assists", null: false
     t.integer "average_rank"
     t.datetime "created_at", null: false
-    t.integer "deaths", null: false
     t.integer "duration", null: false
     t.integer "game_mode"
-    t.integer "hero_id", null: false
-    t.integer "hero_variant"
-    t.integer "kills", null: false
-    t.integer "leaver_status", default: 0, null: false
     t.integer "lobby_type"
     t.bigint "match_id", null: false
-    t.boolean "on_radiant", null: false
-    t.integer "party_size"
     t.datetime "played_at", null: false
-    t.integer "player_slot", null: false
-    t.text "raw_data", null: false
+    t.json "raw_data"
     t.integer "source", default: 2, null: false
     t.datetime "updated_at", null: false
-    t.integer "user_id", null: false
-    t.boolean "won", null: false
     t.index ["match_id"], name: "index_matches_on_match_id"
+    t.index ["match_id"], name: "index_matches_on_user_id_and_match_id", unique: true
     t.index ["played_at"], name: "index_matches_on_played_at"
-    t.index ["user_id", "match_id"], name: "index_matches_on_user_id_and_match_id", unique: true
-    t.index ["user_id"], name: "index_matches_on_user_id"
     t.check_constraint "source IN (0, 1, 2)", name: "check_matches_source"
+  end
+
+  create_table "matches_new", force: :cascade do |t|
+    t.integer "average_rank"
+    t.datetime "created_at", precision: nil, null: false
+    t.integer "duration", null: false
+    t.integer "game_mode"
+    t.integer "lobby_type"
+    t.integer "match_id", null: false
+    t.datetime "played_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
+  end
+
+  create_table "rank_snapshots", force: :cascade do |t|
+    t.datetime "captured_at", null: false
+    t.datetime "created_at", null: false
+    t.integer "match_count", default: 0, null: false
+    t.integer "rank", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.integer "win_count", default: 0, null: false
+    t.index ["captured_at"], name: "index_rank_snapshots_on_captured_at"
+    t.index ["user_id", "captured_at"], name: "index_rank_snapshots_on_user_id_and_captured_at"
+    t.index ["user_id"], name: "index_rank_snapshots_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -132,17 +200,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_03_102122) do
     t.string "activation_token", null: false
     t.integer "classroom_id"
     t.datetime "created_at", null: false
+    t.integer "current_rank", default: 0
     t.string "display_name", null: false
     t.string "dota2_player_id"
     t.integer "group_id"
+    t.integer "highest_rank", default: 0
     t.boolean "is_admin", default: false, null: false
     t.string "password_digest", null: false
+    t.datetime "rank_updated_at"
     t.integer "role", default: 0, null: false
+    t.integer "total_matches", default: 0
+    t.integer "total_wins", default: 0
     t.datetime "updated_at", null: false
     t.string "username"
     t.index ["activation_token"], name: "index_users_on_activation_token", unique: true
     t.index ["classroom_id"], name: "index_users_on_classroom_id"
+    t.index ["current_rank"], name: "index_users_on_current_rank"
     t.index ["group_id"], name: "index_users_on_group_id"
+    t.index ["rank_updated_at"], name: "index_users_on_rank_updated_at"
     t.index ["username"], name: "index_users_on_username", unique: true, where: "username IS NOT NULL"
   end
 
@@ -155,8 +230,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_03_102122) do
   add_foreign_key "coaching_requests", "users", column: "student_id"
   add_foreign_key "comments", "coaching_requests"
   add_foreign_key "comments", "users"
+  add_foreign_key "daily_stats", "users"
   add_foreign_key "groups", "classrooms"
-  add_foreign_key "matches", "users"
+  add_foreign_key "rank_snapshots", "users"
   add_foreign_key "users", "classrooms"
   add_foreign_key "users", "groups"
 end

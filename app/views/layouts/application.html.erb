@@ -1,48 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="dark">
   <head>
-    <title><%= content_for(:title) || "Dota Noob Class" %></title>
+    <title><%= content_for(:title) || "Dota2 萌新班" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Dota Noob Class">
-    <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
-    <%= yield :head %>
-
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
-
-    <link rel="icon" href="/icon.png" type="image/png">
-    <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
-
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
   </head>
 
-  <body class="min-h-screen bg-primary" data-theme="cupcake">
-    <%= render "shared/header" %>
+  <body class="bg-base-100 min-h-screen">
+    <!-- Navbar -->
+    <div class="navbar bg-base-200 border-b border-base-300">
+      <div class="navbar-start">
+        <%= link_to "Dota2 萌新班", root_path, class: "btn btn-ghost text-xl" %>
+      </div>
+      <div class="navbar-end gap-2">
+        <%= link_to "📊 统计", stats_path, class: "btn btn-ghost btn-sm" %>
+        <%= link_to "🎮 对局", matches_path, class: "btn btn-ghost btn-sm" %>
+        <% if current_user&.admin? %>
+          <%= link_to "🐛 异常", exceptions_path, class: "btn btn-ghost btn-sm" %>
+          <%= link_to "⚙️ 队列", mission_control_jobs_path, class: "btn btn-ghost btn-sm" %>
+        <% end %>
+        <% if current_user %>
+          <%= button_to "退出", session_path, method: :delete, class: "btn btn-ghost btn-sm" %>
+        <% else %>
+          <%= link_to "登录", new_session_path, class: "btn btn-primary btn-sm" %>
+        <% end %>
+      </div>
+    </div>
 
+    <!-- Flash Messages -->
     <% if notice %>
-      <div class="toast toast-top toast-center z-50 pt-2">
-        <div class="alert alert-success flex items-center gap-2 pr-2">
+      <div class="toast toast-top toast-center z-50">
+        <div class="alert alert-success">
           <span><%= notice %></span>
-          <button onclick="this.closest('.toast').remove()" class="btn btn-ghost btn-xs">✕</button>
         </div>
       </div>
     <% end %>
     <% if alert %>
-      <div class="toast toast-top toast-center z-50 pt-2">
-        <div class="alert alert-error flex items-center gap-2 pr-2">
+      <div class="toast toast-top toast-center z-50">
+        <div class="alert alert-error">
           <span><%= alert %></span>
-          <button onclick="this.closest('.toast').remove()" class="btn btn-ghost btn-xs">✕</button>
         </div>
       </div>
     <% end %>
 
+    <!-- Content -->
     <%= yield %>
   </body>
 </html>

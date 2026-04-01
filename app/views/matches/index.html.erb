@@ -1,0 +1,97 @@
+<div class="container mx-auto p-4">
+  <h1 class="text-2xl font-bold mb-4">🎮 对局列表</h1>
+
+  <div class="card bg-base-200">
+    <div class="overflow-x-auto">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>对局</th>
+            <th>玩家</th>
+            <th>英雄表现</th>
+            <th>结果</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @match_players.each do |mp| %>
+            <tr class="<%= mp.won ? 'bg-success/10' : 'bg-error/10' %>">
+              <!-- 对局信息 -->
+              <td class="whitespace-nowrap">
+                <div class="text-xs font-mono opacity-70">
+                  <%= link_to mp.match.match_id, match_path(mp.match), class: "hover:underline" %>
+                </div>
+                <div class="text-xs opacity-50">
+                  <%= mp.match.played_at&.in_time_zone('Beijing')&.strftime("%m-%d %H:%M") %>
+                </div>
+                <div class="flex gap-1 mt-1">
+                  <span class="badge badge-ghost badge-xs"><%= mp.match.lobby_type_name %></span>
+                  <span class="badge badge-ghost badge-xs"><%= mp.match.duration_formatted %></span>
+                  <% if mp.party_size && mp.party_size > 1 %>
+                    <span class="badge badge-primary badge-xs"><%= mp.party_size %>排</span>
+                  <% end %>
+                </div>
+              </td>
+
+              <!-- 玩家信息 -->
+              <td>
+                <div class="font-medium">
+                  <%= mp.user.display_name || mp.user.username %>
+                </div>
+                <% if mp.user.classroom || mp.user.group %>
+                  <div class="text-xs opacity-50">
+                    <%= mp.user.classroom&.name %><%= mp.user.classroom&.number %>班
+                    <%= mp.user.group&.number %>组
+                    <%= mp.user.username %>
+                  </div>
+                <% end %>
+                <div class="flex gap-1 mt-1">
+                  <% if mp.on_radiant %>
+                    <span class="badge badge-warning badge-xs">天辉</span>
+                  <% else %>
+                    <span class="badge badge-info badge-xs">夜魇</span>
+                  <% end %>
+                  <span class="badge badge-outline badge-xs" title="<%= mp.position_name %>"><%= mp.position_role %></span>
+                </div>
+              </td>
+
+              <!-- 英雄表现 -->
+              <td>
+                <div class="flex items-center gap-3">
+                  <%= image_tag mp.hero_image_path, 
+                                alt: mp.hero_name, 
+                                class: "w-10 h-10 rounded object-cover",
+                                onerror: "this.src='/assets/heros/placeholder.svg'" %>
+                  <div>
+                    <div class="text-sm font-medium"><%= mp.hero_name %></div>
+                    <div class="font-mono text-sm opacity-70">
+                      <%= mp.kills %>/<%= mp.deaths %>/<%= mp.assists %>
+                    </div>
+                    <div class="flex gap-1 mt-0.5">
+                      <% if mp.lane_outcome %>
+                        <span class="badge <%= mp.lane_outcome_badge_class %> badge-xs"><%= mp.lane_outcome_name %></span>
+                      <% end %>
+                      <% if mp.award_display %>
+                        <span class="badge <%= mp.award_badge_class %> badge-xs"><%= mp.award_text %></span>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              </td>
+
+              <!-- 结果 -->
+              <td>
+                <div class="badge <%= mp.won ? 'badge-success' : 'badge-error' %> badge-lg">
+                  <%= mp.won ? '胜' : '负' %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="mt-6">
+    <%= paginate @match_players if @match_players.respond_to?(:total_pages) %>
+  </div>
+</div>

@@ -1,0 +1,55 @@
+<div class="container mx-auto px-4 py-8">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-bold">🏆 段位分布</h1>
+    <%= link_to "← 返回统计概览", stats_path, class: "text-blue-600 hover:text-blue-800" %>
+  </div>
+
+  <!-- Rank Distribution Summary -->
+  <div class="bg-white shadow rounded-lg p-6 mb-8">
+    <h2 class="text-xl font-semibold mb-4">段位统计</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+      <% tier_order = ["先锋", "卫士", "中军", "统帅", "传奇", "万古", "超凡", "冠绝"] %>
+      <% tier_order.each do |tier_name| %>
+        <% count = @rank_distribution[tier_name] || 0 %>
+        <div class="text-center p-4 bg-gray-50 rounded-lg <%= 'ring-2 ring-blue-500' if count > 0 %>">
+          <p class="font-bold text-gray-900"><%= tier_name %></p>
+          <p class="text-2xl font-bold <%= count > 0 ? 'text-blue-600' : 'text-gray-400' %>"><%= count %></p>
+          <p class="text-xs text-gray-500">人</p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Users by Tier -->
+  <% tier_order.each do |tier_name| %>
+    <% users = @users_by_tier[tier_order.index(tier_name) + 1] || [] %>
+    <% next if users.empty? %>
+    
+    <div class="bg-white shadow rounded-lg overflow-hidden mb-6">
+      <div class="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+        <h2 class="text-xl font-semibold flex items-center gap-2">
+          <span><%= tier_name %></span>
+          <span class="text-sm font-normal text-gray-500">(<%= users.count %>人)</span>
+        </h2>
+      </div>
+      <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <% users.sort_by(&:current_rank).reverse.each do |user| %>
+            <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+              <div class="flex-1 min-w-0">
+                <%= link_to user.display_name, user_path(user), class: "font-medium text-blue-600 hover:text-blue-800 truncate block" %>
+                <p class="text-sm text-gray-500 truncate">
+                  <%= user.classroom&.name %> <%= user.group&.number %>组
+                </p>
+              </div>
+              <div class="text-right">
+                <p class="text-sm font-medium text-gray-900"><%= user.display_rank %></p>
+                <p class="text-xs text-gray-500">胜率 <%= user.win_rate %>%</p>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

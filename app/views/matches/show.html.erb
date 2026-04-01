@@ -1,0 +1,149 @@
+<div class="container mx-auto p-4">
+  <div class="mb-4">
+    <%= link_to "← 返回列表", matches_path, class: "btn btn-ghost btn-sm" %>
+  </div>
+
+  <div class="card bg-base-200 mb-6">
+    <div class="card-body">
+      <h1 class="card-title text-2xl">对局 #<%= @match.match_id %></h1>
+      <div class="flex gap-4 text-sm opacity-70">
+        <span>⏱️ <%= @match.duration_formatted %></span>
+        <span>📅 <%= @match.played_at&.in_time_zone('Beijing')&.strftime("%Y-%m-%d %H:%M") %></span>
+        <span>🏆 <%= @match.lobby_type_name %></span>
+        <span>🎮 <%= @match.game_mode_name %></span>
+        <% if @match.average_rank %>
+          <span>📊 平均段位: <%= @match.average_rank %></span>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <% raw = @match.raw_data %>
+  <% if raw %>
+    <% players = raw['players'] || [] %>
+    <% radiant_players = players.select { |p| p['isRadiant'] } %>
+    <% dire_players = players.reject { |p| p['isRadiant'] } %>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Radiant -->
+      <div class="card bg-base-200">
+        <div class="card-body">
+          <h2 class="card-title text-warning">天辉 <%= raw['didRadiantWin'] ? '👑' : '' %></h2>
+          <div class="overflow-x-auto">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>英雄</th>
+                  <th>玩家</th>
+                  <th>KDA</th>
+                  <th>评价</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% radiant_players.each do |p| %>
+                  <tr>
+                    <td>
+                      <% hero = Hero.find_by_id(p['heroId']) %>
+                      <% hero_name = hero&.name&.sub('npc_dota_hero_', '') %>
+                      <%= image_tag "heros/#{hero_name}.png", 
+                                    class: "w-8 h-8 rounded object-cover",
+                                    onerror: "this.src='/assets/heros/placeholder.svg'" if hero_name %>
+                    </td>
+                    <td>
+                      <% user = User.find_by(dota2_player_id: p['steamAccountId'].to_s) %>
+                      <% if user %>
+                        <span class="font-bold"><%= user.display_name || user.username %></span>
+                      <% else %>
+                        <span class="opacity-50">玩家 <%= p['steamAccountId'] %></span>
+                      <% end %>
+                    </td>
+                    <td class="font-mono">
+                      <%= p['kills'] %>/<%= p['deaths'] %>/<%= p['assists'] %>
+                    </td>
+                    <td>
+                      <% if p['award'] && p['award'] != 'NONE' %>
+                        <% badge_class = case p['award']
+                           when 'MVP' then 'badge-warning'
+                           when 'TOP_CORE' then 'badge-primary'
+                           when 'TOP_SUPPORT' then 'badge-secondary'
+                           else 'badge-ghost'
+                           end %>
+                        <% text = case p['award']
+                           when 'MVP' then 'MVP'
+                           when 'TOP_CORE' then '最佳核心'
+                           when 'TOP_SUPPORT' then '最佳辅助'
+                           else p['award']
+                           end %>
+                        <span class="badge <%= badge_class %> badge-sm"><%= text %></span>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dire -->
+      <div class="card bg-base-200">
+        <div class="card-body">
+          <h2 class="card-title text-info">夜魇 <%= !raw['didRadiantWin'] ? '👑' : '' %></h2>
+          <div class="overflow-x-auto">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>英雄</th>
+                  <th>玩家</th>
+                  <th>KDA</th>
+                  <th>评价</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% dire_players.each do |p| %>
+                  <tr>
+                    <td>
+                      <% hero = Hero.find_by_id(p['heroId']) %>
+                      <% hero_name = hero&.name&.sub('npc_dota_hero_', '') %>
+                      <%= image_tag "heros/#{hero_name}.png", 
+                                    class: "w-8 h-8 rounded object-cover",
+                                    onerror: "this.src='/assets/heros/placeholder.svg'" if hero_name %>
+                    </td>
+                    <td>
+                      <% user = User.find_by(dota2_player_id: p['steamAccountId'].to_s) %>
+                      <% if user %>
+                        <span class="font-bold"><%= user.display_name || user.username %></span>
+                      <% else %>
+                        <span class="opacity-50">玩家 <%= p['steamAccountId'] %></span>
+                      <% end %>
+                    </td>
+                    <td class="font-mono">
+                      <%= p['kills'] %>/<%= p['deaths'] %>/<%= p['assists'] %>
+                    </td>
+                    <td>
+                      <% if p['award'] && p['award'] != 'NONE' %>
+                        <% badge_class = case p['award']
+                           when 'MVP' then 'badge-warning'
+                           when 'TOP_CORE' then 'badge-primary'
+                           when 'TOP_SUPPORT' then 'badge-secondary'
+                           else 'badge-ghost'
+                           end %>
+                        <% text = case p['award']
+                           when 'MVP' then 'MVP'
+                           when 'TOP_CORE' then '最佳核心'
+                           when 'TOP_SUPPORT' then '最佳辅助'
+                           else p['award']
+                           end %>
+                        <span class="badge <%= badge_class %> badge-sm"><%= text %></span>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

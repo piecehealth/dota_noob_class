@@ -1,14 +1,7 @@
 class Match < ApplicationRecord
-  belongs_to :user
-
+  has_many :match_players, dependent: :destroy
+  has_many :users, through: :match_players
   has_one :coaching_request, dependent: :destroy
-
-  serialize :raw_data, coder: JSON
-
-  enum :source, { system_pull: 0, maintainer_upload: 1, user_sync: 2 }
-
-  # Lower value = higher priority
-  SOURCE_PRIORITY = { system_pull: 0, maintainer_upload: 1, user_sync: 2 }.freeze
 
   LOBBY_TYPE_NAMES = {
     0 => "普通匹配",
@@ -22,61 +15,131 @@ class Match < ApplicationRecord
     9 => "战斗杯"
   }.freeze
 
+  GAME_MODE_NAMES = {
+    0 => "未知",
+    1 => "全英雄选择",
+    2 => "队长模式",
+    3 => "随机选秀",
+    4 => "单中模式",
+    5 => "全随机",
+    6 => "开局",
+    7 => "夜魇暗潮",
+    8 => "反队长模式",
+    9 => "贪魔模式",
+    10 => "教程",
+    11 => "中路线",
+    12 => "生疏模式",
+    13 => "新手模式",
+    14 => "Compendium Matchmaking",
+    15 => "自定义游戏",
+    16 => "队长征召",
+    17 => "平衡征召",
+    18 => "技能征召",
+    19 => "活动",
+    20 => "全英雄随机死亡竞赛",
+    21 => "中路单挑",
+    22 => "全英雄选择（抢选）",
+    23 => "加速模式"
+  }.freeze
+
+  validates :match_id, presence: true, uniqueness: true
+  validates :played_at, :duration, presence: true
+
+  scope :recent, -> { order(played_at: :desc) }
+  scope :today, -> { where(played_at: Date.current.all_day) }
+  scope :yesterday, -> { where(played_at: Date.yesterday.all_day) }
+  scope :this_week, -> { where(played_at: 1.week.ago..Time.current) }
+  scope :ranked, -> { joins(:match_players).where(match_players: { lobby_type: 7 }).distinct }
+
   def lobby_type_name
     LOBBY_TYPE_NAMES.fetch(lobby_type, "未知")
   end
 
-  validates :match_id, presence: true, uniqueness: { scope: :user_id }
-  validates :player_slot, :hero_id, :kills, :deaths, :assists, :duration, :played_at, presence: true
-  validates :on_radiant, :won, inclusion: { in: [ true, false ] }
+  def game_mode_name
+    GAME_MODE_NAMES.fetch(game_mode, "未知")
+  end
+
+  def won_by?(user)
+    match_players.find_by(user: user)&.won
+  end
+
+  def duration_formatted
+    minutes = duration / 60
+    seconds = duration % 60
+    "#{minutes}:#{seconds.to_s.rjust(2, '0')}"
+  end
 
   class << self
-    # Build and persist from raw OpenDota API hash.
-    # If the same match already exists for this user, only overwrites when
-    # the incoming source has strictly higher priority.
-    def upsert_from_raw(user:, raw:, source:)
-      attrs = build_attrs(raw:, source:)
-      existing = find_by(user:, match_id: raw["match_id"])
+    # Create match and associated match_players from API data
+    # api_data should contain match info and array of players
+    def create_from_api(api_data, users_by_steam_id = {})
+      match = find_or_initialize_by(match_id: api_data["match_id"])
+      
+      # Update match basic info
+      match.assign_attributes(
+        played_at: parse_time(api_data["start_time"] || api_data["startDateTime"]),
+        duration: api_data["duration"] || api_data["durationSeconds"] || 0,
+        game_mode: api_data["game_mode"],
+        lobby_type: api_data["lobby_type"] || api_data["lobbyType"],
+        average_rank: api_data["average_rank"] || api_data["rank"],
+        raw_data: api_data["raw"]  # Save full match data
+      )
+      match.save!
 
-      if existing
-        return existing unless higher_priority?(source, existing.source)
-        existing.update!(attrs)
-        existing
-      else
-        create!(attrs.merge(user:))
+      # Create/update match_players from raw data
+      # api_data["raw"] contains the full match data with all players
+      raw_match = api_data["raw"]
+      all_players = raw_match&.dig("players") || []
+      
+      # Find the player(s) from our system
+      all_players.each do |player_data|
+        steam_id = player_data["steamAccountId"].to_s
+        user = users_by_steam_id[steam_id]
+        next unless user # Skip if user not in our system
+
+        match_player = match.match_players.find_or_initialize_by(user: user)
+        match_player.assign_attributes(
+          hero_id: player_data["heroId"],
+          hero_variant: player_data["variant"],
+          kills: player_data["kills"] || 0,
+          deaths: player_data["deaths"] || 0,
+          assists: player_data["assists"] || 0,
+          imp: player_data["imp"],
+          role: player_data["role"],
+          position: player_data["position"],
+          lane: player_data["lane"],
+          lane_outcome: api_data["lane_outcome"],  # Calculated in transform_match
+          award: player_data["award"],
+          player_slot: player_data["isRadiant"] ? 0 : 128,
+          on_radiant: player_data["isRadiant"],
+          won: raw_match["didRadiantWin"] == player_data["isRadiant"],
+          party_size: calculate_party_size(all_players, player_data["partyId"]),
+          leaver_status: player_data["leaverStatus"] == "NONE" ? 0 : 1,
+          raw_data: player_data,
+          source: :system_pull
+        )
+        match_player.save!
       end
+
+      match
     end
 
     private
 
-      def build_attrs(raw:, source:)
-        on_radiant = (raw["player_slot"] & 128) == 0
-        won        = on_radiant == raw["radiant_win"]
-
-        {
-          raw_data:      raw,
-          match_id:      raw["match_id"],
-          player_slot:   raw["player_slot"],
-          on_radiant:,
-          won:,
-          hero_id:       raw["hero_id"],
-          hero_variant:  raw["hero_variant"],
-          kills:         raw["kills"],
-          deaths:        raw["deaths"],
-          assists:       raw["assists"],
-          duration:      raw["duration"],
-          played_at:     Time.at(raw["start_time"]),
-          game_mode:     raw["game_mode"],
-          lobby_type:    raw["lobby_type"],
-          average_rank:  raw["average_rank"],
-          party_size:    raw["party_size"],
-          leaver_status: raw["leaver_status"] || 0,
-          source:
-        }
+    def parse_time(time_value)
+      case time_value
+      when Integer
+        Time.at(time_value)
+      when String
+        Time.parse(time_value)
+      else
+        time_value
       end
+    end
 
-      def higher_priority?(incoming, existing)
-        SOURCE_PRIORITY[incoming.to_sym] < SOURCE_PRIORITY[existing.to_sym]
-      end
+    def calculate_party_size(players, party_id)
+      return 1 if party_id.nil? || party_id == 0
+      players.count { |p| p["partyId"] == party_id }
+    end
   end
 end

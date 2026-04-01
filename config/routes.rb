@@ -9,10 +9,28 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
-  # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
-  # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
+  # Public routes - no authentication required
+  resources :matches, only: [:index, :show] do
+    collection do
+      get :mine
+      patch :update_match_player
+    end
+  end
+  resources :stats, only: [:index] do
+    collection do
+      get :daily
+      get :top_performers
+      get :stars
+      get :weekly
+      get :ranks
+      get :compare
+    end
+  end
+  
+  get "classrooms/:id/stats" => "stats#classroom", as: :classroom_stats
+  get "groups/:id/stats" => "stats#group", as: :group_stats
 
+  # Authentication required routes
   resources :users, only: [] do
     get :matches,           on: :member
     get :coaching_requests, on: :member
@@ -44,6 +62,17 @@ Rails.application.routes.draw do
       end
     end
   end
+
+  # Admin routes (protected by AdminConstraint)
+  require "admin_constraint"
+  
+  mount ExceptionTrack::Engine => "/exceptions",
+        as: :exceptions,
+        constraints: AdminConstraint.new
+
+  mount MissionControl::Jobs::Engine => "/jobs",
+        as: :mission_control_jobs,
+        constraints: AdminConstraint.new
 
   root "pages#home"
 end

@@ -13,6 +13,14 @@
           <%= current_user.display_name %>
         </span>
 
+        <%= link_to "📊 统计", stats_path, class: "btn btn-ghost btn-xs sm:btn-sm" %>
+        <%= link_to "🎮 对局", matches_path, class: "btn btn-ghost btn-xs sm:btn-sm" %>
+
+        <% if current_user.admin? %>
+          <%= link_to "🐛 异常日志", exceptions_path, class: "btn btn-ghost btn-xs sm:btn-sm" %>
+          <%= link_to "⚙️ 任务队列", mission_control_jobs_path, class: "btn btn-ghost btn-xs sm:btn-sm" %>
+        <% end %>
+
         <% if current_user.student? %>
           <%= link_to "我的游戏", mine_matches_path, class: "btn btn-ghost btn-xs sm:btn-sm" %>
           <%= link_to "我的复盘", mine_coaching_requests_path, class: "btn btn-ghost btn-xs sm:btn-sm" %>

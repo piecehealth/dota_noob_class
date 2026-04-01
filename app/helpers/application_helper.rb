@@ -1,4 +1,18 @@
 module ApplicationHelper
+  # Hero image path - uses local images from assets
+  def hero_image_path(hero_id)
+    hero = Hero.find_by_id(hero_id)
+    return "heros/placeholder.svg" unless hero
+    
+    # Extract filename from npc_dota_hero_xxx format
+    filename = hero.name.sub('npc_dota_hero_', '')
+    "heros/#{filename}.png"
+  end
+
+  def hero_name(hero_id)
+    Hero.find_by_id(hero_id)&.cn_name || "未知英雄(#{hero_id})"
+  end
+
   CONTRIBUTION_COLORS = [
     "bg-base-200",    # 0 场
     "bg-green-200",   # 1

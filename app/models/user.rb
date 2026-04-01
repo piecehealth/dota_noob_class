@@ -8,9 +8,12 @@ class User < ApplicationRecord
 
   belongs_to :classroom, optional: true
   belongs_to :group, optional: true
-  has_many :matches, dependent: :destroy
+  has_many :match_players, dependent: :destroy
+  has_many :matches, through: :match_players
   has_many :coaching_requests_as_student, class_name: "CoachingRequest", foreign_key: :student_id, dependent: :destroy
   has_many :coaching_requests_as_coach,   class_name: "CoachingRequest", foreign_key: :coach_id,   dependent: :nullify
+  has_many :rank_snapshots, dependent: :destroy
+  has_many :daily_stats, dependent: :destroy
 
   validates :display_name, presence: true
   validates :dota2_player_id, presence: true, if: :student?
@@ -21,6 +24,8 @@ class User < ApplicationRecord
 
   scope :activated, -> { where.not(activated_at: nil) }
   scope :pending,   -> { where(activated_at: nil) }
+  scope :students_with_dota_id, -> { student.where.not(dota2_player_id: nil) }
+  scope :active_students, -> { student.activated.where.not(dota2_player_id: nil) }
 
   ROLE_NAMES = { "student" => "学员", "coach" => "教练", "assistant" => "辅导员" }.freeze
 
@@ -44,35 +49,84 @@ class User < ApplicationRecord
     update!(username:, password:, password_confirmation:, activated_at: Time.current)
   end
 
-  # 拉取最近 29 天的对局数据并入库，返回处理的场数。
+  # Update rank info from Stratz API
+  def update_rank_info!
+    return unless student? && dota2_player_id
+
+    profile = StratzApi.new.player_profile(dota2_player_id)
+    return if profile.nil?
+
+    new_rank = profile[:rank] || 0
+    
+    # Update highest rank if current is higher
+    new_highest = [highest_rank, new_rank].max
+    
+    update!(
+      current_rank: new_rank,
+      highest_rank: new_highest,
+      total_matches: profile[:match_count] || 0,
+      total_wins: profile[:win_count] || 0,
+      rank_updated_at: Time.current
+    )
+    
+    # Also create a rank snapshot
+    RankSnapshot.capture_for_user(self, profile)
+    
+    { rank: new_rank, highest_rank: new_highest }
+  rescue StratzApi::Error => e
+    Rails.logger.error "Failed to update rank for user #{id}: #{e.message}"
+    nil
+  end
+
+  # 拉取最近的对局数据并入库，返回处理的场数。
   # 仅对学员有效（需要 dota2_player_id）。
   # 网络或 API 异常时抛出 User::SyncError。
-  def sync_matches
+  def sync_matches(since_days: 14)
     raise SyncError, "非学员账号无法同步" unless student?
+    raise SyncError, "未设置 Dota2 Player ID" if dota2_player_id.nil?
 
-    raw_list = fetch_recent_matches
-    raw_list.each { |raw| Match.upsert_from_raw(user: self, raw: raw, source: :system_pull) }
-    raw_list.size
+    api = StratzApi.new
+    results = api.batch_sync_players([dota2_player_id], since_days: since_days)
+    data = results[dota2_player_id]
+    
+    return 0 unless data
+
+    matches = data[:matches].compact
+    matches.each do |raw|
+      Match.upsert_from_raw(user: self, raw: raw, source: :system_pull)
+    end
+    
+    matches.size
+  rescue StratzApi::Error => e
+    raise SyncError, "Stratz API 错误：#{e.message}"
+  end
+
+  # Get formatted rank display
+  def display_rank
+    return "未校准" if current_rank.nil? || current_rank <= 0
+    
+    tier = (current_rank / 10) + 1
+    stars = (current_rank % 10) + 1
+    
+    tier_names = {
+      1 => "先锋",
+      2 => "卫士",
+      3 => "中军",
+      4 => "统帅",
+      5 => "传奇",
+      6 => "万古",
+      7 => "超凡",
+      8 => "冠绝"
+    }
+    
+    "#{tier_names[tier] || '未知'} #{stars}星"
+  end
+
+  # Calculate current win rate
+  def win_rate
+    return 0 if total_matches.nil? || total_matches.zero?
+    (total_wins.to_f / total_matches * 100).round(1)
   end
 
   class SyncError < StandardError; end
-
-  private
-
-    OPENDOTA_MATCHES_URL = "https://api.opendota.com/api/players/%s/matches?date=29"
-
-    def fetch_recent_matches
-      uri = URI(OPENDOTA_MATCHES_URL % dota2_player_id)
-      response = Net::HTTP.start(uri.host, uri.port, use_ssl: true, open_timeout: 5, read_timeout: 15) do |http|
-        http.get(uri.request_uri)
-      end
-
-      raise SyncError, "OpenDota API 返回错误：HTTP #{response.code}" unless response.is_a?(Net::HTTPSuccess)
-
-      JSON.parse(response.body)
-    rescue Net::OpenTimeout, Net::ReadTimeout
-      raise SyncError, "请求 OpenDota API 超时，请稍后重试"
-    rescue SocketError, Errno::ECONNREFUSED => e
-      raise SyncError, "无法连接 OpenDota API：#{e.message}"
-    end
 end

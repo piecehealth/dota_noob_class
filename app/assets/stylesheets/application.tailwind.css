@@ -1,8 +1,16 @@
 @import "tailwindcss";
 @import "./actiontext.css";
 @plugin "daisyui" {
-  themes: light --default, dark --prefersdark, cupcake;
+  themes: dark --default;
 }
 
 /* Hide Trix file upload button */
 trix-toolbar .trix-button-group--file-tools { display: none; }
+
+/* Simple match list styling */
+.match-win {
+  border-left: 3px solid #4ade80;
+}
+.match-loss {
+  border-left: 3px solid #f87171;
+}
