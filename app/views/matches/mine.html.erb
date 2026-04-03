@@ -1,11 +1,14 @@
-<div class="py-6 px-3 sm:px-6">
-  <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
-    <div class="p-4 sm:p-8">
-      <h1 class="text-2xl font-bold mb-6">我的对战记录</h1>
+<div class="container mx-auto p-4">
+  <div class="flex items-center gap-3 mb-6">
+    <%= link_to "←", root_path, class: "btn btn-ghost btn-sm" %>
+    <h1 class="text-2xl font-bold">我的对局</h1>
+  </div>
 
-      <%= render "matches/match_list", matches: @matches, weekly_limit_reached: @weekly_limit_reached %>
-
-      <%= paginate @matches %>
+  <div class="card bg-base-200">
+    <div class="card-body">
+      <%= render "matches/match_list", matches: @matches %>
     </div>
   </div>
+
+  <%= paginate @matches %>
 </div>

@@ -19,7 +19,17 @@ production:
   sync_players_morning:
     class: BatchSyncAllPlayersJob
     schedule: at 4am every day
-    
+
   sync_players_evening:
     class: BatchSyncAllPlayersJob
     schedule: at 4pm every day
+
+  # Calculate daily stats after morning sync
+  calculate_daily_stats:
+    class: CalculateDailyStatsJob
+    schedule: at 5am every day
+
+  # Calculate weekly stats every Monday at 3am
+  calculate_weekly_stats:
+    class: CalculateWeeklyStatsJob
+    schedule: at 3am every Monday

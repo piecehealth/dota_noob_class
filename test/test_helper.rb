@@ -6,18 +6,23 @@ BCrypt::Engine.cost = BCrypt::Engine::MIN_COST
 
 module ActiveSupport
   class TestCase
-    # Run tests in parallel with specified workers
     parallelize(workers: :number_of_processors)
-
-    # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
   end
 end
 
 class ActionDispatch::IntegrationTest
-  private
-
-  def sign_in(user, password: "password123")
-    post session_path, params: { username: user.username, password: }
+  # Helper to sign in as a user for testing
+  # Uses a test-only endpoint to set session
+  def sign_in(user)
+    # Post to sessions controller with admin credentials if user is admin
+    # Otherwise, we need to bypass authentication for non-admin users in tests
+    if user.admin?
+      post session_path, params: { username: user.username, password: "password123" }
+    else
+      # For non-admin users: use a backdoor in test environment
+      # We'll create a special controller action for this
+      get "/test/sign_in/#{user.id}"
+    end
   end
 end

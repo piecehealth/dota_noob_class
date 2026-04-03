@@ -1,5 +1,0 @@
-coach_note:
-  coaching_request: in_progress_cr
-  user: coach_bob
-  created_at: <%= Time.current %>
-  updated_at: <%= Time.current %>

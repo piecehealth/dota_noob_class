@@ -1,37 +1,57 @@
 <div class="container mx-auto p-4">
-  <!-- Header -->
+  <!-- Header with Week Navigation -->
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
     <div>
-      <h1 class="text-2xl font-bold">🏆 本周排行榜</h1>
-      <p class="text-sm opacity-60">
-        <%= @week_start.strftime("%m月%d日") %> - <%= @week_end.strftime("%m月%d日") %>
-      </p>
+      <h1 class="text-2xl font-bold">
+        <%= @week_start.year %>年<%= @week_start.month %>月<%= @week_start.day %>日 
+        - 
+        <%= @week_end.year %>年<%= @week_end.month %>月<%= @week_end.day %>日
+      </h1>
+      <p class="text-sm opacity-60">第<%= @week_start.cweek %>周 排行榜</p>
+    </div>
+    
+    <!-- Week Navigation -->
+    <% current_index = @available_weeks.index(@week_start) %>
+    <div class="join">
+      <% if current_index && current_index < @available_weeks.size - 1 %>
+        <% prev_week = @available_weeks[current_index + 1] %>
+        <%= link_to "← 上一周", weekly_leaderboard_path(week: prev_week), class: "btn btn-sm join-item" %>
+      <% end %>
+      
+      <%= link_to "返回列表", history_leaderboards_path, class: "btn btn-sm join-item" %>
+      
+      <% if current_index && current_index > 0 %>
+        <% next_week = @available_weeks[current_index - 1] %>
+        <%= link_to "下一周 →", weekly_leaderboard_path(week: next_week), class: "btn btn-sm join-item" %>
+      <% elsif @week_start < Date.current.beginning_of_week(:monday) %>
+        <%= link_to "本周 →", root_path, class: "btn btn-sm join-item" %>
+      <% end %>
     </div>
   </div>
 
   <!-- Summary Stats (Big Numbers) -->
   <div class="stats shadow w-full mb-8">
     <div class="stat bg-primary/10">
-      <div class="stat-title">本周活跃玩家</div>
+      <div class="stat-title">活跃玩家</div>
       <div class="stat-value text-primary"><%= @summary[:active_players] %></div>
-      <div class="stat-desc">有对局记录的玩家</div>
+      <div class="stat-desc">有对局记录</div>
     </div>
     <div class="stat bg-secondary/10">
-      <div class="stat-title">本周总场次</div>
+      <div class="stat-title">总场次</div>
       <div class="stat-value text-secondary"><%= @summary[:matches_total] %></div>
-      <div class="stat-desc">所有模式对局</div>
+      <div class="stat-desc">所有模式</div>
     </div>
     <div class="stat bg-accent/10">
-      <div class="stat-title">本周排位场次</div>
+      <div class="stat-title">排位场次</div>
       <div class="stat-value text-accent"><%= @summary[:matches_ranked] %></div>
-      <div class="stat-desc">天梯匹配对局</div>
+      <div class="stat-desc">天梯匹配</div>
     </div>
   </div>
 
   <!-- Leaderboards Grid -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     
-    <!-- 冲分榜 - 段位提升最多 -->
+    <!-- 冲分榜 -->
     <div class="card bg-base-200">
       <div class="card-body">
         <h2 class="card-title text-lg mb-4">
@@ -54,7 +74,7 @@
                 <div class="text-right">
                   <div class="text-success font-bold">+<%= entry.value %>级</div>
                   <% if entry.details %>
-                    <div class="text-xs opacity-50" title="<%= entry.details['start_display'] %> → <%= entry.details['end_display'] %>">
+                    <div class="text-xs opacity-50">
                       <%= entry.details['start_display'] %> → <%= entry.details['end_display'] %>
                     </div>
                   <% end %>
@@ -70,7 +90,7 @@
       </div>
     </div>
 
-    <!-- 玩家场次榜 -->
+    <!-- 肝帝榜 -->
     <div class="card bg-base-200">
       <div class="card-body">
         <h2 class="card-title text-lg mb-4">

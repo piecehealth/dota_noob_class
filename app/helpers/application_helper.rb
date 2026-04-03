@@ -3,9 +3,9 @@ module ApplicationHelper
   def hero_image_path(hero_id)
     hero = Hero.find_by_id(hero_id)
     return "heros/placeholder.svg" unless hero
-    
+
     # Extract filename from npc_dota_hero_xxx format
-    filename = hero.name.sub('npc_dota_hero_', '')
+    filename = hero.name.sub("npc_dota_hero_", "")
     "heros/#{filename}.png"
   end
 

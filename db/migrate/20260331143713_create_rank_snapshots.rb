@@ -10,7 +10,7 @@ class CreateRankSnapshots < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :rank_snapshots, [:user_id, :captured_at]
+    add_index :rank_snapshots, [ :user_id, :captured_at ]
     add_index :rank_snapshots, :captured_at
   end
 end

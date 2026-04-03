@@ -1,26 +1,39 @@
 # frozen_string_literal: true
 
 class MatchesController < ApplicationController
-  before_action :require_authentication, only: [:mine, :update_match_player]
-  before_action :set_match, only: [:show]
-  before_action :set_match_player, only: [:update_match_player]
+  before_action :require_authentication, only: [ :mine, :update_match_player ]
+  before_action :set_match, only: [ :show ]
+  before_action :set_match_player, only: [ :update_match_player ]
+  before_action :load_filter_options, only: [ :index ]
 
   def index
-    @match_players = MatchPlayer.includes(match: [], user: [])
-                                .order(created_at: :desc)
-                                .page(params[:page])
-                                .per(25)
+    @match_players = MatchPlayer.includes(match: [], user: [ :classroom, :group ])
+                                .joins(:match)
+                                .order("matches.played_at DESC")
+
+    # Apply filters
+    if params[:classroom_id].present?
+      @match_players = @match_players.joins(user: :classroom)
+                                      .where(users: { classroom_id: params[:classroom_id] })
+    end
+
+    if params[:group_id].present?
+      @match_players = @match_players.joins(user: :group)
+                                      .where(users: { group_id: params[:group_id] })
+    end
+
+    @match_players = @match_players.page(params[:page]).per(25)
   end
 
   def show
   end
 
   def mine
-    @match_players = current_user.match_players
-                                  .includes(match: [])
-                                  .order(created_at: :desc)
-                                  .page(params[:page])
-                                  .per(20)
+    @matches = current_user.match_players
+                           .includes(match: [])
+                           .order(created_at: :desc)
+                           .page(params[:page])
+                           .per(20)
   end
 
   def update_match_player
@@ -47,5 +60,15 @@ class MatchesController < ApplicationController
 
   def match_player_params
     params.require(:match_player).permit(:lane_advantage, :award)
+  end
+
+  def load_filter_options
+    @classrooms = Classroom.order(:number)
+
+    if params[:classroom_id].present?
+      @groups = Group.where(classroom_id: params[:classroom_id]).order(:number)
+    else
+      @groups = []
+    end
   end
 end

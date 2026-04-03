@@ -1,8 +1,8 @@
-<div class="py-6 px-3 sm:px-6">
-  <div class="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
-    <div class="p-4 sm:p-8">
-      <h1 class="text-2xl font-bold mb-6">我的班级</h1>
+<div class="container mx-auto p-4">
+  <h1 class="text-2xl font-bold mb-6">我的班级</h1>
 
+  <div class="card bg-base-200">
+    <div class="card-body">
       <div role="tablist" class="tabs tabs-border">
         <% @groups.each_with_index do |group, i| %>
           <input type="radio" name="classroom_tabs" class="tab"
@@ -12,44 +12,40 @@
           <div class="tab-content p-4">
             <% students = @students_by_group[group] %>
             <% if students.empty? %>
-              <p class="text-base-content/50 text-sm">本组暂无学员</p>
+              <p class="opacity-50 text-sm">本组暂无学员</p>
             <% else %>
               <div class="flex flex-col gap-4">
                 <% students.each do |student| %>
                   <% recent_matches = student.matches.sort_by { |m| -m.played_at.to_i }.first(10) %>
-                  <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-base-100 rounded-lg">
                     <%# Student info %>
                     <div class="w-28 shrink-0">
                       <div class="font-semibold text-sm truncate"><%= student.display_name %></div>
-                      <div class="text-xs text-base-content/40 font-mono mb-1"><%= student.dota2_player_id %></div>
+                      <div class="text-xs opacity-40 font-mono mb-1"><%= student.dota2_player_id %></div>
                       <div class="flex flex-col gap-0.5">
                         <%= link_to "对局详情", matches_user_path(student),
-                              class: "text-xs text-primary hover:underline" %>
-                        <% open_count = @open_cr_counts[student.id].to_i %>
-                        <%= link_to coaching_requests_user_path(student),
-                              class: "text-xs text-primary hover:underline" do %>
-                          复盘记录<%= open_count > 0 ? "（#{open_count}）" : "" %>
-                        <% end %>
+                              class: "text-xs link link-primary" %>
                       </div>
                     </div>
 
                     <%# Mini match chips %>
-                    <% if recent_matches.empty? %>
-                      <span class="text-xs text-base-content/30">暂无记录</span>
+                    <% recent_mps = student.match_players.includes(:match).order(created_at: :desc).limit(10) %>
+                    <% if recent_mps.empty? %>
+                      <span class="text-xs opacity-30">暂无记录</span>
                     <% else %>
                       <div class="flex gap-1 flex-wrap">
-                        <% recent_matches.each do |match| %>
-                          <% hero = Hero.find_by_id(match.hero_id) %>
+                        <% recent_mps.each do |mp| %>
+                          <% hero = Hero.find_by_id(mp.hero_id) %>
                           <% hero_key = hero&.name&.sub("npc_dota_hero_", "") %>
                           <div class="tooltip tooltip-bottom"
-                               data-tip="<%= hero&.cn_name %> <%= match.kills %>/<%= match.deaths %>/<%= match.assists %>">
-                            <div class="w-9 h-9 rounded-lg overflow-hidden ring-2 <%= match.won? ? 'ring-success' : 'ring-error' %>">
+                               data-tip="<%= hero&.cn_name %> <%= mp.kills %>/<%= mp.deaths %>/<%= mp.assists %>">
+                            <div class="w-9 h-9 rounded-lg overflow-hidden ring-2 <%= mp.won ? 'ring-success' : 'ring-error' %>">
                               <% if hero_key %>
                                 <%= image_tag "heros/#{hero_key}.png",
                                       class: "w-full h-full object-cover",
                                       alt: hero&.cn_name %>
                               <% else %>
-                                <div class="w-full h-full bg-base-200 flex items-center justify-center text-xs">?</div>
+                                <div class="w-9 h-9 bg-base-200 flex items-center justify-center text-xs">?</div>
                               <% end %>
                             </div>
                           </div>
@@ -63,7 +59,6 @@
           </div>
         <% end %>
       </div>
-
     </div>
   </div>
 </div>

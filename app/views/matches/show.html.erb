@@ -12,7 +12,7 @@
         <span>🏆 <%= @match.lobby_type_name %></span>
         <span>🎮 <%= @match.game_mode_name %></span>
         <% if @match.average_rank %>
-          <span>📊 平均段位: <%= @match.average_rank %></span>
+          <span>📊 平均段位: <%= @match.rank_name %> (<%= @match.average_rank %>)</span>
         <% end %>
       </div>
     </div>
@@ -41,6 +41,8 @@
               </thead>
               <tbody>
                 <% radiant_players.each do |p| %>
+                  <% user = User.find_by(dota2_player_id: p['steamAccountId'].to_s) %>
+                  <% game_name = p.dig('steamAccount', 'name') || "玩家#{p['steamAccountId']}" %>
                   <tr>
                     <td>
                       <% hero = Hero.find_by_id(p['heroId']) %>
@@ -50,11 +52,19 @@
                                     onerror: "this.src='/assets/heros/placeholder.svg'" if hero_name %>
                     </td>
                     <td>
-                      <% user = User.find_by(dota2_player_id: p['steamAccountId'].to_s) %>
+                      <div class="font-bold">
+                        <%= game_name %>
+                      </div>
+                      
                       <% if user %>
-                        <span class="font-bold"><%= user.display_name || user.username %></span>
+                        <div class="text-xs opacity-70">
+                          <%= link_to user.display_name || user.username, matches_user_path(user), class: "link link-primary" %>
+                          <% if user.classroom || user.group %>
+                            · <%= user.classroom&.number %>班<%= user.group&.number %>组
+                          <% end %>
+                        </div>
                       <% else %>
-                        <span class="opacity-50">玩家 <%= p['steamAccountId'] %></span>
+                        <div class="text-xs opacity-50">路人</div>
                       <% end %>
                     </td>
                     <td class="font-mono">
@@ -101,6 +111,8 @@
               </thead>
               <tbody>
                 <% dire_players.each do |p| %>
+                  <% user = User.find_by(dota2_player_id: p['steamAccountId'].to_s) %>
+                  <% game_name = p.dig('steamAccount', 'name') || "玩家#{p['steamAccountId']}" %>
                   <tr>
                     <td>
                       <% hero = Hero.find_by_id(p['heroId']) %>
@@ -110,11 +122,19 @@
                                     onerror: "this.src='/assets/heros/placeholder.svg'" if hero_name %>
                     </td>
                     <td>
-                      <% user = User.find_by(dota2_player_id: p['steamAccountId'].to_s) %>
+                      <div class="font-bold">
+                        <%= game_name %>
+                      </div>
+                      
                       <% if user %>
-                        <span class="font-bold"><%= user.display_name || user.username %></span>
+                        <div class="text-xs opacity-70">
+                          <%= link_to user.display_name || user.username, matches_user_path(user), class: "link link-primary" %>
+                          <% if user.classroom || user.group %>
+                            · <%= user.classroom&.number %>班<%= user.group&.number %>组
+                          <% end %>
+                        </div>
                       <% else %>
-                        <span class="opacity-50">玩家 <%= p['steamAccountId'] %></span>
+                        <div class="text-xs opacity-50">路人</div>
                       <% end %>
                     </td>
                     <td class="font-mono">

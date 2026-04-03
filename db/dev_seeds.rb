@@ -4,7 +4,7 @@
 # Match data source: https://api.opendota.com/api/players/842923082/matches?date=28
 # Idempotent: uses upsert_from_raw which skips existing records of equal/higher priority.
 
-classroom = Classroom.find_or_create_by!(number: 1) { |c| c.name = "第一期" }
+classroom = Classroom.find_or_create_by!(number: 1) { |c| c.name = "1班" }
 group     = classroom.groups.find_or_create_by!(number: 1)
 user      = User.find_or_create_by!(dota2_player_id: "842923082") do |u|
   u.display_name = "piecehealth"

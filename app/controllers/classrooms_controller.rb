@@ -15,12 +15,6 @@ class ClassroomsController < ApplicationController
                                .group_by(&:group_id)
 
     @students_by_group = @groups.index_with { |g| student_ids_by_group[g.id] || [] }
-
-    all_student_ids = student_ids_by_group.values.flatten.map(&:id)
-    @open_cr_counts = CoachingRequest
-      .where(student_id: all_student_ids, status: [ :requested, :in_progress ])
-      .group(:student_id)
-      .count
   end
 
   private

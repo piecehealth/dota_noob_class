@@ -1,86 +1,91 @@
-<div class="container mx-auto px-4 py-8">
+<div class="container mx-auto p-4">
+  <!-- Header -->
   <div class="flex items-center justify-between mb-6">
-    <h1 class="text-3xl font-bold">每日排行榜</h1>
-    <%= link_to "← 返回统计概览", stats_path(date: @date), class: "text-blue-600 hover:text-blue-800" %>
+    <h1 class="text-2xl font-bold">🏆 每日排行</h1>
+    <%= link_to "← 返回统计", stats_path(date: @date), class: "btn btn-ghost btn-sm" %>
   </div>
   
   <!-- Date Navigation -->
-  <div class="bg-white shadow rounded-lg p-4 mb-6">
-    <div class="flex items-center justify-between">
-      <%= link_to "← 前一天", daily_stats_path(date: @date - 1.day), class: "text-blue-600 hover:text-blue-800" %>
-      <span class="text-xl font-semibold"><%= @date.strftime("%Y年%m月%d日") %></span>
-      <%= link_to "后一天 →", daily_stats_path(date: @date + 1.day), class: "text-blue-600 hover:text-blue-800" %>
+  <div class="card bg-base-200 mb-6">
+    <div class="card-body py-4">
+      <div class="flex items-center justify-between">
+        <%= link_to "← 前一天", daily_stats_path(date: @date - 1.day), class: "btn btn-ghost btn-sm" %>
+        <span class="text-lg font-semibold"><%= @date.strftime("%Y年%m月%d日") %></span>
+        <%= link_to "后一天 →", daily_stats_path(date: @date + 1.day), class: "btn btn-ghost btn-sm" %>
+      </div>
     </div>
   </div>
 
   <!-- Stats Table -->
-  <div class="bg-white shadow rounded-lg overflow-hidden">
-    <table class="min-w-full">
-      <thead class="bg-gray-50">
-        <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">排名</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">玩家</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">班级/小组</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">段位</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">对局数</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">胜/负</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">胜率</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">KDA</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">段位变化</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-200">
-        <% @stats.each_with_index do |stat, index| %>
-          <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4">
-              <% if index < 3 %>
-                <span class="text-2xl"><%= ["🥇", "🥈", "🥉"][index] %></span>
-              <% else %>
-                <span class="text-gray-500 font-medium">#<%= index + 1 %></span>
-              <% end %>
-            </td>
-            <td class="px-6 py-4">
-              <%= link_to stat.user.display_name, user_path(stat.user), class: "text-blue-600 hover:text-blue-800 font-medium" %>
-            </td>
-            <td class="px-6 py-4 text-gray-600">
-              <%= stat.user.classroom&.name %> <%= stat.user.group&.number %>组
-            </td>
-            <td class="px-6 py-4">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                <%= stat.user.display_rank %>
-              </span>
-            </td>
-            <td class="px-6 py-4 font-medium"><%= stat.matches_count %></td>
-            <td class="px-6 py-4">
-              <span class="text-green-600"><%= stat.wins_count %></span>
-              <span class="text-gray-400">/</span>
-              <span class="text-red-600"><%= stat.losses_count %></span>
-            </td>
-            <td class="px-6 py-4">
-              <span class="<%= stat.win_rate >= 50 ? 'text-green-600 font-medium' : 'text-red-600' %>">
-                <%= stat.win_rate %>%
-              </span>
-            </td>
-            <td class="px-6 py-4 text-gray-600"><%= stat.avg_kda %></td>
-            <td class="px-6 py-4">
-              <% if stat.rank_change > 0 %>
-                <span class="text-green-600 font-medium">+<%= stat.rank_change %></span>
-              <% elsif stat.rank_change < 0 %>
-                <span class="text-red-600 font-medium"><%= stat.rank_change %></span>
-              <% else %>
-                <span class="text-gray-400">-</span>
-              <% end %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+  <div class="card bg-base-200">
+    <div class="card-body">
+      <div class="overflow-x-auto">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>排名</th>
+              <th>玩家</th>
+              <th>班级/小组</th>
+              <th>段位</th>
+              <th>对局数</th>
+              <th>胜/负</th>
+              <th>胜率</th>
+              <th>KDA</th>
+              <th>段位变化</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @stats.each_with_index do |stat, index| %>
+              <tr class="hover">
+                <td>
+                  <% if index < 3 %>
+                    <span class="text-2xl"><%= ["🥇", "🥈", "🥉"][index] %></span>
+                  <% else %>
+                    <span class="opacity-50 font-medium">#<%= index + 1 %></span>
+                  <% end %>
+                </td>
+                <td>
+                  <%= link_to stat.user.display_name, user_path(stat.user), class: "link link-primary font-medium" %>
+                </td>
+                <td class="opacity-70">
+                  <%= stat.user.classroom&.name %> <%= stat.user.group&.number %>组
+                </td>
+                <td>
+                  <span class="badge badge-primary badge-sm"><%= stat.user.display_rank %></span>
+                </td>
+                <td class="font-medium"><%= stat.matches_count %></td>
+                <td>
+                  <span class="text-success"><%= stat.wins_count %></span>
+                  <span class="opacity-30">/</span>
+                  <span class="text-error"><%= stat.losses_count %></span>
+                </td>
+                <td>
+                  <span class="<%= stat.win_rate >= 50 ? 'text-success' : 'text-error' %>"><%= stat.win_rate %>%</span>
+                </td>
+                <td class="opacity-70"><%= stat.avg_kda %></td>
+                <td>
+                  <% if stat.rank_change > 0 %>
+                    <span class="text-success font-medium">+<%= stat.rank_change %></span>
+                  <% elsif stat.rank_change < 0 %>
+                    <span class="text-error font-medium"><%= stat.rank_change %></span>
+                  <% else %>
+                    <span class="opacity-30">-</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
   
   <% if @stats.empty? %>
-    <div class="text-center py-12 text-gray-500">
-      <p class="text-lg">暂无数据</p>
-      <p class="mt-2">该日期没有玩家进行对局</p>
+    <div class="card bg-base-200 mt-6">
+      <div class="card-body text-center py-12">
+        <p class="text-lg opacity-70">暂无数据</p>
+        <p class="text-sm opacity-50 mt-2">该日期没有玩家进行对局</p>
+      </div>
     </div>
   <% end %>
 </div>

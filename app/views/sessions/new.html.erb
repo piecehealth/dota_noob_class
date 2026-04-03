@@ -1,29 +1,51 @@
-<div class="min-h-screen flex items-center justify-center bg-base-200">
-  <div class="card w-full max-w-sm bg-base-100 shadow-xl">
-    <div class="card-body">
-      <h2 class="card-title text-2xl font-bold mb-4">登录</h2>
-
-      <% if flash[:alert] %>
-        <div role="alert" class="alert alert-error mb-4">
-          <span><%= flash[:alert] %></span>
+<div class="container mx-auto p-4">
+  <div class="min-h-[70vh] flex items-center justify-center">
+    <div class="w-full max-w-sm">
+      <!-- Logo/Icon -->
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
+          </svg>
         </div>
-      <% end %>
+        <h1 class="text-2xl font-bold">管理员登录</h1>
+        <p class="text-sm opacity-60 mt-1">Dota2 萌新班数据平台</p>
+      </div>
 
-      <%= form_with url: session_path, method: :post do |f| %>
-        <fieldset class="fieldset">
-          <label class="fieldset-label" for="username">用户名</label>
-          <%= f.text_field :username, id: "username", class: "input input-bordered w-full", placeholder: "请输入用户名", required: true, autofocus: true %>
-        </fieldset>
+      <!-- Login Card -->
+      <div class="card bg-base-200 shadow-xl">
+        <div class="card-body">
+          <%= form_with url: session_path, class: "space-y-6" do |form| %>
+            <!-- Username Field -->
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-sm">用户名</legend>
+              <%= form.text_field :username, 
+                  class: "input input-bordered w-full", 
+                  placeholder: "请输入用户名",
+                  required: true,
+                  autofocus: true %>
+            </fieldset>
 
-        <fieldset class="fieldset mt-3">
-          <label class="fieldset-label" for="password">密码</label>
-          <%= f.password_field :password, id: "password", class: "input input-bordered w-full", placeholder: "请输入密码", required: true %>
-        </fieldset>
+            <!-- Password Field -->
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend text-sm">密码</legend>
+              <%= form.password_field :password, 
+                  class: "input input-bordered w-full", 
+                  placeholder: "请输入密码",
+                  required: true %>
+            </fieldset>
 
-        <div class="mt-6">
-          <%= f.submit "登录", class: "btn btn-primary w-full" %>
+            <!-- Submit Button -->
+            <%= form.submit "登录", 
+                class: "btn btn-primary w-full btn-lg mt-4" %>
+          <% end %>
         </div>
-      <% end %>
+      </div>
+
+      <!-- Footer -->
+      <p class="text-center text-xs opacity-40 mt-8">
+        仅限管理员访问
+      </p>
     </div>
   </div>
 </div>

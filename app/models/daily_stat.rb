@@ -44,19 +44,22 @@ class DailyStat < ApplicationRecord
       start_of_day = date.beginning_of_day
       end_of_day = date.end_of_day
 
-      matches = user.matches.where(played_at: start_of_day..end_of_day)
-      
-      return nil if matches.empty?
+      # Get match_players for this user on this date
+      match_players = user.match_players
+                          .joins(:match)
+                          .where(matches: { played_at: start_of_day..end_of_day })
 
-      wins = matches.where(won: true).count
-      losses = matches.where(won: false).count
-      
-      kills = matches.sum(:kills)
-      deaths = matches.sum(:deaths)
-      assists = matches.sum(:assists)
-      
-      total_duration = matches.sum(:duration)
-      
+      return nil if match_players.empty?
+
+      wins = match_players.where(won: true).count
+      losses = match_players.where(won: false).count
+
+      kills = match_players.sum(:kills)
+      deaths = match_players.sum(:deaths)
+      assists = match_players.sum(:assists)
+
+      total_duration = match_players.sum("matches.duration")
+
       avg_kda = if deaths > 0
         ((kills + assists) / deaths.to_f).round(2)
       else
@@ -77,7 +80,7 @@ class DailyStat < ApplicationRecord
 
       find_or_initialize_by(user: user, date: date).tap do |stat|
         stat.assign_attributes(
-          matches_count: matches.count,
+          matches_count: match_players.count,
           wins_count: wins,
           losses_count: losses,
           total_kills: kills,
@@ -95,7 +98,7 @@ class DailyStat < ApplicationRecord
     # Aggregate stats for a group/classroom
     def aggregate_for_users(user_ids, date)
       stats = where(user_id: user_ids, date: date)
-      
+
       {
         total_matches: stats.sum(:matches_count),
         total_wins: stats.sum(:wins_count),

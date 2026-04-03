@@ -1,6 +1,36 @@
 <div class="container mx-auto p-4">
   <h1 class="text-2xl font-bold mb-4">🎮 对局列表</h1>
 
+  <!-- Filters -->
+  <div class="card bg-base-200 mb-4">
+    <div class="card-body py-4">
+      <%= form_with url: matches_path, method: :get, class: "flex flex-wrap items-center gap-3" do |f| %>
+        <div class="flex items-center gap-2">
+          <label class="text-sm whitespace-nowrap">班级:</label>
+          <%= f.select :classroom_id, 
+              options_for_select(@classrooms.map { |c| ["#{c.number}班", c.id] }, params[:classroom_id]),
+              { include_blank: "全部" },
+              class: "select select-bordered select-sm w-28",
+              onchange: "this.form.submit()" %>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <label class="text-sm whitespace-nowrap">小组:</label>
+          <%= f.select :group_id,
+              options_for_select(@groups.map { |g| ["#{g.number}组", g.id] }, params[:group_id]),
+              { include_blank: "全部" },
+              class: "select select-bordered select-sm w-28",
+              disabled: @groups.empty? %>
+        </div>
+        
+        <div class="flex items-center gap-2 ml-auto">
+          <%= f.submit "筛选", class: "btn btn-primary btn-sm" %>
+          <%= link_to "清除", matches_path, class: "btn btn-ghost btn-sm" if params[:classroom_id].present? || params[:group_id].present? %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
   <div class="card bg-base-200">
     <div class="overflow-x-auto">
       <table class="table">
@@ -35,13 +65,20 @@
               <!-- 玩家信息 -->
               <td>
                 <div class="font-medium">
-                  <%= mp.user.display_name || mp.user.username %>
+                  <%= link_to mp.user.display_name || mp.user.username, 
+                      matches_user_path(mp.user),
+                      class: "link link-primary" %>
                 </div>
                 <% if mp.user.classroom || mp.user.group %>
                   <div class="text-xs opacity-50">
-                    <%= mp.user.classroom&.name %><%= mp.user.classroom&.number %>班
-                    <%= mp.user.group&.number %>组
-                    <%= mp.user.username %>
+                    <% if mp.user.classroom %>
+                      <%= link_to "#{mp.user.classroom.number}班", classroom_stats_path(mp.user.classroom),
+                          class: "hover:underline" %>
+                    <% end %>
+                    <% if mp.user.group %>
+                      <%= link_to "#{mp.user.group.number}组", group_stats_path(mp.user.group),
+                          class: "hover:underline" %>
+                    <% end %>
                   </div>
                 <% end %>
                 <div class="flex gap-1 mt-1">
@@ -50,7 +87,7 @@
                   <% else %>
                     <span class="badge badge-info badge-xs">夜魇</span>
                   <% end %>
-                  <span class="badge badge-outline badge-xs" title="<%= mp.position_name %>"><%= mp.position_role %></span>
+                  <span class="badge badge-outline badge-xs"><%= mp.position_role %></span>
                 </div>
               </td>
 
@@ -70,7 +107,7 @@
                       <% if mp.lane_outcome %>
                         <span class="badge <%= mp.lane_outcome_badge_class %> badge-xs"><%= mp.lane_outcome_name %></span>
                       <% end %>
-                      <% if mp.award_display %>
+                      <% if mp.award.present? && mp.award != "NONE" %>
                         <span class="badge <%= mp.award_badge_class %> badge-xs"><%= mp.award_text %></span>
                       <% end %>
                     </div>

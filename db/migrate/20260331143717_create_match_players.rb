@@ -40,9 +40,9 @@ class CreateMatchPlayers < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :match_players, [:match_id, :user_id], unique: true
+    add_index :match_players, [ :match_id, :user_id ], unique: true
     add_index :match_players, :hero_id
-    add_index :match_players, [:user_id, :won]
+    add_index :match_players, [ :user_id, :won ]
     add_index :match_players, :award
   end
 end

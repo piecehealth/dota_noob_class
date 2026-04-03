@@ -1,31 +1,19 @@
 win_match:
-  user: alice
   match_id: 8000000001
   raw_data: "{}"
-  player_slot: 0
-  on_radiant: true
-  won: true
-  hero_id: 1
-  kills: 10
-  deaths: 2
-  assists: 5
   duration: 2400
   played_at: "2026-02-01 10:00:00"
-  leaver_status: 0
   source: 0
+  game_mode: 1
+  lobby_type: 7
+  average_rank: 45
 
 loss_match:
-  user: alice
   match_id: 8000000002
   raw_data: "{}"
-  player_slot: 131
-  on_radiant: false
-  won: false
-  hero_id: 14
-  kills: 3
-  deaths: 8
-  assists: 4
   duration: 1800
   played_at: "2026-02-02 10:00:00"
-  leaver_status: 0
   source: 0
+  game_mode: 22
+  lobby_type: 7
+  average_rank: 42

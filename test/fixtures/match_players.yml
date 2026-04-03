@@ -1,0 +1,41 @@
+win_match_alice:
+  match: win_match
+  user: alice
+  player_slot: 0
+  on_radiant: true
+  won: true
+  hero_id: 1
+  kills: 10
+  deaths: 2
+  assists: 5
+  leaver_status: 0
+  source: 0
+  party_size: 1
+
+loss_match_alice:
+  match: loss_match
+  user: alice
+  player_slot: 131
+  on_radiant: false
+  won: false
+  hero_id: 14
+  kills: 3
+  deaths: 8
+  assists: 4
+  leaver_status: 0
+  source: 0
+  party_size: 1
+
+win_match_bob:
+  match: win_match
+  user: coach_bob
+  player_slot: 1
+  on_radiant: true
+  won: true
+  hero_id: 2
+  kills: 8
+  deaths: 3
+  assists: 12
+  leaver_status: 0
+  source: 0
+  party_size: 1

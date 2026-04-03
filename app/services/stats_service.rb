@@ -8,14 +8,14 @@ class StatsService
   # @param scope_id [Integer] classroom_id or group_id
   def self.daily_leaderboard(date: Date.yesterday, scope: :all, scope_id: nil)
     stats = DailyStat.for_date(date).with_matches.includes(:user)
-    
+
     case scope
     when :classroom
       stats = stats.joins(user: :classroom).where(users: { classroom_id: scope_id })
     when :group
       stats = stats.joins(user: :group).where(users: { group_id: scope_id })
     end
-    
+
     stats.ordered
   end
 
@@ -27,7 +27,7 @@ class StatsService
     DailyStat
       .for_date(date)
       .with_matches
-      .includes(user: [:classroom, :group])
+      .includes(user: [ :classroom, :group ])
       .order(metric => :desc)
       .limit(limit)
   end
@@ -37,7 +37,7 @@ class StatsService
     DailyStat
       .for_date(date)
       .where("rank_change > 0")
-      .includes(user: [:classroom, :group])
+      .includes(user: [ :classroom, :group ])
       .order(rank_change: :desc)
       .limit(limit)
   end
@@ -45,14 +45,14 @@ class StatsService
   # Get overall statistics for a classroom
   def self.classroom_stats(classroom_id, date: Date.yesterday)
     user_ids = User.where(classroom_id: classroom_id).pluck(:id)
-    
+
     DailyStat.aggregate_for_users(user_ids, date)
   end
 
   # Get overall statistics for a group
   def self.group_stats(group_id, date: Date.yesterday)
     user_ids = User.where(group_id: group_id).pluck(:id)
-    
+
     DailyStat.aggregate_for_users(user_ids, date)
   end
 
@@ -71,7 +71,7 @@ class StatsService
       .transform_keys do |tier|
         tier_names = {
           1 => "先锋",
-          2 => "卫士", 
+          2 => "卫士",
           3 => "中军",
           4 => "统帅",
           5 => "传奇",
@@ -86,25 +86,32 @@ class StatsService
   # Get weekly activity report
   def self.weekly_report(end_date: Date.yesterday)
     start_date = end_date - 6.days
-    
+
     matches = Match.where(played_at: start_date.beginning_of_day..end_date.end_of_day)
-    
+    match_ids = matches.pluck(:id)
+
+    # Get match_players for these matches
+    match_players = MatchPlayer.where(match_id: match_ids)
+    unique_players = match_players.distinct.count(:user_id)
+
     daily_breakdown = (start_date..end_date).map do |date|
-      day_matches = matches.where(played_at: date.all_day)
-      
+      day_match_ids = matches.where(played_at: date.all_day).pluck(:id)
+      day_match_players = MatchPlayer.where(match_id: day_match_ids)
+      day_unique_players = day_match_players.distinct.count(:user_id)
+
       {
         date: date,
-        matches_count: day_matches.count,
-        unique_players: day_matches.distinct.count(:user_id),
-        wins: day_matches.where(won: true).count,
-        losses: day_matches.where(won: false).count
+        matches_count: day_match_ids.count,
+        unique_players: day_unique_players,
+        wins: day_match_players.where(won: true).count,
+        losses: day_match_players.where(won: false).count
       }
     end
 
     {
       period: "#{start_date} 至 #{end_date}",
       total_matches: matches.count,
-      unique_players: matches.distinct.count(:user_id),
+      unique_players: unique_players,
       daily_breakdown: daily_breakdown
     }
   end
@@ -112,17 +119,22 @@ class StatsService
   # Get player comparison stats
   def self.compare_players(user_ids, days: 7)
     start_date = days.days.ago.to_date
-    
+
     User.where(id: user_ids).map do |user|
-      matches = user.matches.where(played_at: start_date.beginning_of_day..Time.current)
-      
+      match_players = MatchPlayer.joins(:match)
+                                  .where(user: user)
+                                  .where(matches: { played_at: start_date.beginning_of_day..Time.current })
+
+      wins = match_players.where(won: true).count
+      total = match_players.count
+
       {
         user: user,
-        matches_count: matches.count,
-        wins: matches.where(won: true).count,
-        losses: matches.where(won: false).count,
-        win_rate: matches.count > 0 ? (matches.where(won: true).count.to_f / matches.count * 100).round(1) : 0,
-        avg_kda: calculate_avg_kda(matches),
+        matches_count: total,
+        wins: wins,
+        losses: match_players.where(won: false).count,
+        win_rate: total > 0 ? (wins.to_f / total * 100).round(1) : 0,
+        avg_kda: calculate_avg_kda_from_match_players(match_players),
         current_rank: user.current_rank,
         rank_progress: calculate_rank_progress(user, days)
       }
@@ -133,7 +145,7 @@ class StatsService
   def self.star_students(since: 7.days.ago, limit: 10)
     # Find users with significant rank improvement
     improvements = RankSnapshot
-                     .select("user_id, 
+                     .select("user_id,
                              MAX(rank) - MIN(rank) as rank_improvement,
                              MIN(captured_at) as first_snapshot,
                              MAX(captured_at) as last_snapshot")
@@ -157,20 +169,30 @@ class StatsService
 
   def self.calculate_avg_kda(matches)
     return 0 if matches.count.zero?
-    
+
     total_kda = matches.sum do |m|
       m.deaths.zero? ? m.kills + m.assists : (m.kills + m.assists) / m.deaths.to_f
     end
-    
+
     (total_kda / matches.count).round(2)
+  end
+
+  def self.calculate_avg_kda_from_match_players(match_players)
+    return 0 if match_players.count.zero?
+
+    total_kda = match_players.sum do |mp|
+      mp.deaths.zero? ? mp.kills + mp.assists : (mp.kills + mp.assists) / mp.deaths.to_f
+    end
+
+    (total_kda / match_players.count).round(2)
   end
 
   def self.calculate_rank_progress(user, days)
     old_snapshot = user.rank_snapshots.where("captured_at <= ?", days.days.ago).order(captured_at: :desc).first
     latest_snapshot = user.rank_snapshots.order(captured_at: :desc).first
-    
+
     return { change: 0, old_rank: nil, new_rank: nil } if old_snapshot.nil? || latest_snapshot.nil?
-    
+
     {
       change: latest_snapshot.rank - old_snapshot.rank,
       old_rank: old_snapshot.rank,

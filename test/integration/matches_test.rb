@@ -10,15 +10,17 @@ class MatchesTest < ActionDispatch::IntegrationTest
     sign_in users(:alice)
     get mine_matches_path
     assert_response :success
-    assert_select "div", text: /#8000000001/
-    assert_select "div", text: /#8000000002/
+    assert_select "a", text: /8000000001/
+    assert_select "a", text: /8000000002/
   end
 
   test "matches are ordered by played_at descending" do
     sign_in users(:alice)
     get mine_matches_path
     body = response.body
-    assert body.index("#8000000002") < body.index("#8000000001"),
-      "newer match should appear before older match"
+    pos1 = body.index("8000000001")
+    pos2 = body.index("8000000002")
+    assert pos1 && pos2, "both match IDs should appear in response"
+    assert pos2 < pos1, "newer match should appear before older match"
   end
 end

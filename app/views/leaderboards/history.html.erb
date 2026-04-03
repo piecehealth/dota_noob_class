@@ -1,0 +1,27 @@
+<div class="container mx-auto p-4">
+  <h1 class="text-2xl font-bold mb-6">📅 往期排行榜</h1>
+  
+  <% if @available_weeks.any? %>
+    <div class="space-y-2">
+      <% @available_weeks.each do |week_start| 
+           week_end = week_start.end_of_week(:sunday) %>
+        <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg hover:bg-base-300">
+          <%= link_to weekly_leaderboard_path(week: week_start), class: "flex-1" do %>
+            <span class="text-lg">
+              <%= week_start.strftime("%Y年%m月%d日") %> - <%= week_end.strftime("%Y年%m月%d日") %>
+            </span>
+          <% end %>
+          <%= link_to "查看", weekly_leaderboard_path(week: week_start), class: "btn btn-sm btn-ghost" %>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="text-center py-12 opacity-50">
+      <p>暂无历史排行榜数据</p>
+    </div>
+  <% end %>
+  
+  <div class="mt-6">
+    <%= link_to "← 返回本周排行榜", root_path, class: "btn btn-ghost btn-sm" %>
+  </div>
+</div>

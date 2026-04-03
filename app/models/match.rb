@@ -1,7 +1,6 @@
 class Match < ApplicationRecord
   has_many :match_players, dependent: :destroy
   has_many :users, through: :match_players
-  has_one :coaching_request, dependent: :destroy
 
   LOBBY_TYPE_NAMES = {
     0 => "普通匹配",
@@ -59,6 +58,33 @@ class Match < ApplicationRecord
     GAME_MODE_NAMES.fetch(game_mode, "未知")
   end
 
+  # 段位名称映射 (rank 0-80+)
+  RANK_NAMES = {
+    0 => "先锋",
+    1 => "卫士",
+    2 => "中军",
+    3 => "统帅",
+    4 => "传奇",
+    5 => "万古流芳",
+    6 => "超凡入圣",
+    7 => "冠绝一世"
+  }.freeze
+
+  def rank_name
+    return nil if average_rank.nil?
+
+    tier = average_rank / 10
+    star = (average_rank % 10) + 1
+    tier_name = RANK_NAMES.fetch(tier, "未知")
+
+    # 冠绝一世没有星级
+    if tier >= 7
+      tier_name
+    else
+      "#{tier_name} #{star}星"
+    end
+  end
+
   def won_by?(user)
     match_players.find_by(user: user)&.won
   end
@@ -74,7 +100,7 @@ class Match < ApplicationRecord
     # api_data should contain match info and array of players
     def create_from_api(api_data, users_by_steam_id = {})
       match = find_or_initialize_by(match_id: api_data["match_id"])
-      
+
       # Update match basic info
       match.assign_attributes(
         played_at: parse_time(api_data["start_time"] || api_data["startDateTime"]),
@@ -90,7 +116,7 @@ class Match < ApplicationRecord
       # api_data["raw"] contains the full match data with all players
       raw_match = api_data["raw"]
       all_players = raw_match&.dig("players") || []
-      
+
       # Find the player(s) from our system
       all_players.each do |player_data|
         steam_id = player_data["steamAccountId"].to_s

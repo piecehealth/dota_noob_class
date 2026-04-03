@@ -1,26 +1,21 @@
 class UsersController < ApplicationController
-  before_action :require_authentication
+  before_action :set_user, only: [ :show, :matches ]
 
-  def matches
-    @student = User.find(params[:id])
-    authorize_student_view!
-    @matches = @student.matches.order(played_at: :desc).page(params[:page]).per(20)
+  def show
   end
 
-  def coaching_requests
-    @student = User.find(params[:id])
-    authorize_student_view!
-    @coaching_requests = @student.coaching_requests_as_student
-      .includes(:match)
-      .order(created_at: :desc)
+  def matches
+    @student = @user
+    @matches = @student.match_players
+                       .includes(:match)
+                       .order("matches.played_at DESC")
+                       .page(params[:page])
+                       .per(20)
   end
 
   private
 
-    def authorize_student_view!
-      return if current_user.admin? || current_user.coach? || current_user.assistant?
-      return if current_user.id == @student.id
-
-      redirect_to root_path, alert: "无权限"
-    end
+  def set_user
+    @user = User.find(params[:id])
+  end
 end

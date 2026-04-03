@@ -13,37 +13,12 @@ class StratzApi
   API_ENDPOINT = "https://api.stratz.com/graphql"
   USER_AGENT = "STRATZ_API"
 
-  # Batch size for bulk queries
-  BATCH_SIZE = 10
-
-  DEFAULT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJTdWJqZWN0IjoiZDI0NTEzZGQtMzk1Zi00ZDU5LTkxNDAtMDQ1ZjNkY2EzNGZhIiwiU3RlYW1JZCI6IjM2NzcwNzUzNyIsIkFQSVVzZXIiOiJ0cnVlIiwibmJmIjoxNzc0OTMxOTU3LCJleHAiOjE4MDY0Njc5NTcsImlhdCI6MTc3NDkzMTk1NywiaXNzIjoiaHR0cHM6Ly9hcGkuc3RyYXR6LmNvbSJ9.tGMH7R-yo61rzND674GHDeJxmMNZ_zgFBvgnGv4lc3I"
+  # Batch size for bulk queries (Stratz API supports up to 50 players per request)
+  BATCH_SIZE = 50
 
   def initialize(token = nil)
-    @token = token || ENV["STRATZ_API_TOKEN"] || DEFAULT_TOKEN
+    @token = token || default_token
     raise Error, "STRATZ_API_TOKEN not configured" if @token.nil? || @token.empty?
-  end
-
-  # Fetch recent matches for multiple players in one request
-  # @param steam_account_ids [Array<Integer>] Array of Steam account IDs
-  # @param take [Integer] Number of matches per player
-  # @return [Hash] { steam_account_id => [matches] }
-  def batch_player_matches(steam_account_ids, take: 20)
-    results = {}
-    
-    # Process in batches to avoid query complexity limits
-    steam_account_ids.each_slice(BATCH_SIZE) do |batch_ids|
-      query = build_batch_matches_query(batch_ids, take)
-      response = execute_query(query)
-      data = response.dig("data") || {}
-      
-      batch_ids.each do |steam_id|
-        player_data = data["player#{steam_id}"]
-        matches = player_data&.dig("matches") || []
-        results[steam_id] = matches.map { |m| transform_match(m, steam_id) }
-      end
-    end
-    
-    results
   end
 
   # Fetch player profiles for multiple players in one request
@@ -51,18 +26,18 @@ class StratzApi
   # @return [Hash] { steam_account_id => profile_hash }
   def batch_player_profiles(steam_account_ids)
     results = {}
-    
+
     steam_account_ids.each_slice(BATCH_SIZE) do |batch_ids|
       query = build_batch_profiles_query(batch_ids)
       response = execute_query(query)
       data = response.dig("data") || {}
-      
+
       batch_ids.each do |steam_id|
         player_data = data["player#{steam_id}"]
         results[steam_id] = transform_profile(player_data) if player_data
       end
     end
-    
+
     results
   end
 
@@ -70,7 +45,7 @@ class StratzApi
   # @param steam_account_id [Integer]
   # @return [Hash]
   def player_profile(steam_account_id)
-    results = batch_player_profiles([steam_account_id])
+    results = batch_player_profiles([ steam_account_id ])
     results[steam_account_id]
   end
 
@@ -81,76 +56,41 @@ class StratzApi
   # @return [Hash] { steam_account_id => { matches: [], profile: {} } }
   def batch_sync_players(steam_account_ids, since_days: 14, users_by_steam_id: {})
     results = {}
-    
+
     # Calculate start date timestamp
     start_date = since_days.days.ago.to_i
-    
+
     steam_account_ids.each_slice(BATCH_SIZE) do |batch_ids|
       query = build_batch_sync_query(batch_ids, start_date)
       response = execute_query(query)
       data = response.dig("data") || {}
-      
+
       batch_ids.each do |steam_id|
         player_data = data["player#{steam_id}"]
         next unless player_data
 
         matches = player_data.dig("matches") || []
-        
+
         # Create/update matches in database
         matches.each do |match_data|
           transformed = transform_match(match_data, steam_id)
           Match.create_from_api(transformed, users_by_steam_id) if transformed
         end
-        
+
         results[steam_id] = {
           matches: matches.map { |m| transform_match(m, steam_id) },
           profile: transform_profile(player_data)
         }
       end
     end
-    
+
     results
   end
 
   private
 
-  def build_batch_matches_query(steam_ids, take)
-    players_queries = steam_ids.map do |steam_id|
-      <<~GRAPHQL
-        player#{steam_id}: player(steamAccountId: #{steam_id}) {
-          matches(request: { take: #{take} }) {
-            id
-            didRadiantWin
-            durationSeconds
-            startDateTime
-            lobbyType
-            gameMode
-            rank
-            players {
-              steamAccountId
-              isRadiant
-              heroId
-              kills
-              deaths
-              assists
-              imp
-              role
-              position
-              lane
-              leaverStatus
-              partyId
-              variant
-              award
-            }
-            topLaneOutcome
-            midLaneOutcome
-            bottomLaneOutcome
-          }
-        }
-      GRAPHQL
-    end
-
-    "query { #{players_queries.join("\n")} }"
+  def default_token
+    Rails.application.credentials.stratz_token || ENV["STRATZ_API_TOKEN"]
   end
 
   def build_batch_profiles_query(steam_ids)
@@ -202,6 +142,9 @@ class StratzApi
             rank
             players {
               steamAccountId
+              steamAccount {
+                name
+              }
               isRadiant
               heroId
               kills
@@ -255,11 +198,11 @@ class StratzApi
 
   def parse_response(body)
     data = JSON.parse(body)
-    
+
     if data["errors"]
       raise ApiError, data["errors"].map { |e| e["message"] }.join(", ")
     end
-    
+
     data
   rescue JSON::ParserError => e
     raise ApiError, "Invalid JSON response: #{e.message}"
@@ -269,6 +212,7 @@ class StratzApi
   GAME_MODE_IDS = {
     "UNKNOWN" => 0,
     "ALL_PICK" => 1,
+    "ALL_PICK_RANKED" => 22,  # 排位全英雄选择（抢选）
     "CAPTAINS_MODE" => 2,
     "RANDOM_DRAFT" => 3,
     "SINGLE_DRAFT" => 4,
@@ -315,15 +259,15 @@ class StratzApi
     return nil if player_data.nil?
 
     on_radiant = player_data["isRadiant"]
-    
+
     # Convert game mode string to ID
     game_mode_str = match["gameMode"].to_s.upcase
     game_mode_id = GAME_MODE_IDS[game_mode_str] || 0
-    
+
     # Convert lobby type string to ID
     lobby_type_str = match["lobbyType"].to_s.upcase
     lobby_type_id = LOBBY_TYPE_IDS[lobby_type_str] || 0
-    
+
     {
       "match_id" => match["id"],
       "player_slot" => on_radiant ? 0 : 128,
@@ -377,7 +321,7 @@ class StratzApi
   def calculate_lane_outcome(player_data, match)
     lane = player_data["lane"]
     is_radiant = player_data["isRadiant"]
-    
+
     # Map lane to outcome field
     outcome_field = case lane
     when "SAFE_LANE"
@@ -389,21 +333,21 @@ class StratzApi
     else
       return nil
     end
-    
+
     outcome = match[outcome_field]
     return nil if outcome.nil?
-    
+
     # Parse outcome enum value
     # Typical values: RADIANT_VICTORY, RADIANT_STOMP, DIRE_VICTORY, DIRE_STOMP, DRAW, etc.
     outcome_str = outcome.to_s.upcase
-    
+
     # Determine if player won their lane
     player_won = if is_radiant
       outcome_str.include?("RADIANT")
     else
       outcome_str.include?("DIRE")
     end
-    
+
     # Determine advantage level
     if player_won
       if outcome_str.include?("STOMP") || outcome_str.include?("DOMINATE")

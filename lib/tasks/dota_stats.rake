@@ -9,10 +9,10 @@ namespace :dota do
 
       user = User.find(user_id)
       puts "Syncing matches for #{user.display_name} (Player ID: #{user.dota2_player_id})..."
-      
+
       count = user.sync_matches(since_days: 14)
       puts "Synced #{count} matches (last 14 days)."
-      
+
       puts "Updating rank info..."
       result = user.update_rank_info!
       puts "Rank: #{result[:rank]}, Highest: #{result[:highest_rank]}" if result
@@ -38,7 +38,7 @@ namespace :dota do
       date = ENV["DATE"] ? Date.parse(ENV["DATE"]) : Date.yesterday
       puts "\nTop performers for #{date}:\n"
       puts "-" * 80
-      
+
       stats = StatsService.top_performers(date: date, metric: :wins_count, limit: 10)
       stats.each_with_index do |stat, i|
         puts "#{i + 1}. #{stat.user.display_name} - #{stat.wins_count} wins (#{stat.win_rate}% WR)"
@@ -50,7 +50,7 @@ namespace :dota do
       days = ENV["DAYS"]&.to_i || 7
       puts "\nStar students (past #{days} days):\n"
       puts "-" * 80
-      
+
       stars = StatsService.star_students(since: days.days.ago, limit: 10)
       stars.each_with_index do |star, i|
         puts "#{i + 1}. #{star[:user].display_name} - +#{star[:rank_improvement]} rank (#{star[:days_tracked]} days)"
@@ -73,7 +73,7 @@ namespace :dota do
           messages << "\n"
           messages << e.backtrace
         end
-        
+
         ExceptionTrack::Log.create(title: title[0, 200], body: messages.join("\n"))
         puts "Exception logged successfully!"
         puts "Total exceptions in database: #{ExceptionTrack::Log.count}"
@@ -84,14 +84,14 @@ namespace :dota do
     task test_batch: :environment do
       users = User.active_students.limit(5)
       puts "Testing batch query for #{users.count} users (last 14 days)..."
-      
+
       api = StratzApi.new
       player_ids = users.map(&:dota2_player_id)
-      
+
       start_time = Time.current
       results = api.batch_sync_players(player_ids, since_days: 14)
       duration = Time.current - start_time
-      
+
       puts "Query completed in #{duration.round(2)}s"
       puts "Results:"
       results.each do |player_id, data|

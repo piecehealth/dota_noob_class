@@ -10,11 +10,11 @@ class RankSnapshot < ApplicationRecord
 
   # Rank tiers mapping based on Stratz rank values
   # Rank is typically a number where higher is better
-  # Common ranges: Herald (1-5), Guardian (6-10), Crusader (11-15), 
+  # Common ranges: Herald (1-5), Guardian (6-10), Crusader (11-15),
   # Archon (16-20), Legend (21-25), Ancient (26-30), Divine (31-35), Immortal (36+)
   TIER_NAMES = {
     1 => "先锋",
-    2 => "卫士", 
+    2 => "卫士",
     3 => "中军",
     4 => "统帅",
     5 => "传奇",
@@ -90,7 +90,7 @@ class RankSnapshot < ApplicationRecord
       previous_snapshots = select("DISTINCT ON (user_id) user_id, rank as previous_rank, match_count as previous_matches, win_count as previous_wins")
                            .where("captured_at <= ?", since)
                            .order("user_id, captured_at DESC")
-                           
+
       current_snapshots = select("DISTINCT ON (user_id) user_id, rank as current_rank, match_count as current_matches, win_count as current_wins")
                           .order("user_id, captured_at DESC")
 
@@ -100,7 +100,7 @@ class RankSnapshot < ApplicationRecord
         INNER JOIN (#{current_snapshots.to_sql}) curr ON curr.user_id = rank_snapshots.user_id
       SQL
 
-      select("rank_snapshots.user_id, 
+      select("rank_snapshots.user_id,
               (curr.current_rank - prev.previous_rank) as rank_improvement,
               (curr.current_matches - prev.previous_matches) as matches_played,
               (curr.current_wins - prev.previous_wins) as wins,

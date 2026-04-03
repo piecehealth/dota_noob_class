@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_31_143720) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_03_055420) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -55,39 +55,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_143720) do
     t.integer "number", null: false
     t.datetime "updated_at", null: false
     t.index ["number"], name: "index_classrooms_on_number", unique: true
-  end
-
-  create_table "coaching_request_events", force: :cascade do |t|
-    t.integer "coaching_request_id", null: false
-    t.datetime "created_at", null: false
-    t.integer "from_status", null: false
-    t.integer "operator_id", null: false
-    t.integer "to_status", null: false
-    t.datetime "updated_at", null: false
-    t.index ["coaching_request_id"], name: "index_coaching_request_events_on_coaching_request_id"
-    t.index ["operator_id"], name: "index_coaching_request_events_on_operator_id"
-  end
-
-  create_table "coaching_requests", force: :cascade do |t|
-    t.integer "coach_id"
-    t.datetime "created_at", null: false
-    t.integer "match_id", null: false
-    t.integer "status", default: 0, null: false
-    t.integer "student_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["coach_id"], name: "index_coaching_requests_on_coach_id"
-    t.index ["match_id"], name: "index_coaching_requests_on_match_id", unique: true
-    t.index ["student_id"], name: "index_coaching_requests_on_student_id"
-    t.check_constraint "status IN (0, 1, 2)", name: "coaching_requests_status_check"
-  end
-
-  create_table "comments", force: :cascade do |t|
-    t.integer "coaching_request_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.integer "user_id", null: false
-    t.index ["coaching_request_id"], name: "index_comments_on_coaching_request_id"
-    t.index ["user_id"], name: "index_comments_on_user_id"
   end
 
   create_table "daily_stats", force: :cascade do |t|
@@ -221,15 +188,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_143720) do
     t.index ["username"], name: "index_users_on_username", unique: true, where: "username IS NOT NULL"
   end
 
+  create_table "weekly_leaderboards", force: :cascade do |t|
+    t.integer "classroom_id"
+    t.datetime "created_at", null: false
+    t.json "details"
+    t.integer "entity_id"
+    t.string "entity_name"
+    t.string "entity_type"
+    t.integer "group_id"
+    t.string "metric_type"
+    t.integer "rank"
+    t.datetime "updated_at", null: false
+    t.integer "value"
+    t.date "week_end"
+    t.date "week_start"
+    t.index ["classroom_id"], name: "index_weekly_leaderboards_on_classroom_id"
+    t.index ["entity_id"], name: "index_weekly_leaderboards_on_entity_id"
+    t.index ["metric_type", "entity_type", "week_start"], name: "index_weekly_leaderboards_on_metric_type_and_entity"
+    t.index ["rank"], name: "index_weekly_leaderboards_on_rank"
+    t.index ["week_start", "metric_type"], name: "index_weekly_leaderboards_on_week_start_and_metric_type"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
-  add_foreign_key "coaching_request_events", "coaching_requests"
-  add_foreign_key "coaching_request_events", "users", column: "operator_id"
-  add_foreign_key "coaching_requests", "matches"
-  add_foreign_key "coaching_requests", "users", column: "coach_id"
-  add_foreign_key "coaching_requests", "users", column: "student_id"
-  add_foreign_key "comments", "coaching_requests"
-  add_foreign_key "comments", "users"
   add_foreign_key "daily_stats", "users"
   add_foreign_key "groups", "classrooms"
   add_foreign_key "rank_snapshots", "users"

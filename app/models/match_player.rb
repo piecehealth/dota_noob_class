@@ -17,7 +17,7 @@ class MatchPlayer < ApplicationRecord
   # Position role names
   POSITION_ROLES = {
     1 => "核心",
-    2 => "中单", 
+    2 => "中单",
     3 => "劣单",
     4 => "半辅",
     5 => "纯辅"
@@ -42,7 +42,7 @@ class MatchPlayer < ApplicationRecord
   # Calculate position number (1-5)
   def position_number
     if position.present?
-      position.gsub('POSITION_', '').to_i
+      position.gsub("POSITION_", "").to_i
     else
       fallback_position
     end
@@ -66,8 +66,8 @@ class MatchPlayer < ApplicationRecord
   def hero_image_path
     hero = Hero.find_by_id(hero_id)
     return nil unless hero
-    
-    hero_name = hero.name.sub('npc_dota_hero_', '')
+
+    hero_name = hero.name.sub("npc_dota_hero_", "")
     "heros/#{hero_name}.png"
   end
 
@@ -102,13 +102,13 @@ class MatchPlayer < ApplicationRecord
   def fallback_position
     slot = player_slot.to_i
     pos_in_team = slot < 128 ? slot : slot - 128
-    
+
     case lane
-    when 'MID_LANE'
+    when "MID_LANE"
       2
-    when 'SAFE_LANE'
+    when "SAFE_LANE"
       (pos_in_team == 0) ? 1 : 5
-    when 'OFF_LANE'
+    when "OFF_LANE"
       (pos_in_team == 2) ? 3 : 4
     else
       case pos_in_team

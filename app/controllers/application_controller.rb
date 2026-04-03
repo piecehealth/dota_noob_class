@@ -15,6 +15,11 @@ class ApplicationController < ActionController::Base
     @current_user
   end
 
+  def authenticated?
+    @current_user.present?
+  end
+  helper_method :authenticated?
+
   def require_authentication
     redirect_to new_session_path, alert: "请先登录" unless @current_user
   end

@@ -1,22 +1,21 @@
 Rails.application.routes.draw do
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
-
-  resource  :session,     only: [ :new, :create, :destroy ]
-  resources :activations, only: [ :show, :update ], param: :token
-  resource  :password,    only: [ :edit, :update ]
-
-  # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
-  # Can be used by load balancers and uptime monitors to verify that the app is live.
+  # Health check
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # Public routes - no authentication required
-  resources :matches, only: [:index, :show] do
+  # Public routes
+  get "leaderboards/history", to: "leaderboards#history", as: :history_leaderboards
+  get "leaderboards/:week", to: "leaderboards#show", as: :weekly_leaderboard, constraints: { week: /\d{4}-\d{2}-\d{2}/ }
+
+  resources :leaderboards, only: [ :index ]
+
+  resources :matches, only: [ :index, :show ] do
     collection do
       get :mine
       patch :update_match_player
     end
   end
-  resources :stats, only: [:index] do
+
+  resources :stats, only: [ :index ] do
     collection do
       get :daily
       get :top_performers
@@ -26,46 +25,38 @@ Rails.application.routes.draw do
       get :compare
     end
   end
-  
-  get "classrooms/:id/stats" => "stats#classroom", as: :classroom_stats
-  get "groups/:id/stats" => "stats#group", as: :group_stats
 
-  # Authentication required routes
-  resources :users, only: [] do
-    get :matches,           on: :member
-    get :coaching_requests, on: :member
+  # Classroom and Group stats (member routes)
+  get "classrooms/:id/stats", to: "stats#classroom", as: :classroom_stats
+  get "groups/:id/stats", to: "stats#group", as: :group_stats
+
+  # Simple session management
+  resource :session, only: [ :new, :create, :destroy ]
+
+  # User routes
+  resources :users, only: [ :show ] do
+    member do
+      get :matches
+    end
   end
 
+  # Classroom routes
   resources :classrooms, only: [] do
     collection do
       get :mine
     end
   end
 
-  resources :coaching_requests, only: [ :index ] do
-    collection do
-      get :mine
+  # Test-only routes (development and test environments only)
+  if Rails.env.test? || Rails.env.development?
+    namespace :test do
+      get "sign_in/:user_id", to: "sessions#sign_in", as: :sign_in
     end
   end
 
-  resources :matches, only: [] do
-    collection do
-      get :mine
-    end
-    scope module: "matches" do
-      resource :coaching_request, only: [ :show, :create ] do
-        patch :claim
-        patch :complete
-        patch :reopen
-        delete :cancel
-        resources :comments, only: [ :create ]
-      end
-    end
-  end
-
-  # Admin routes (protected by AdminConstraint)
+  # Admin only routes
   require "admin_constraint"
-  
+
   mount ExceptionTrack::Engine => "/exceptions",
         as: :exceptions,
         constraints: AdminConstraint.new

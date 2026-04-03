@@ -6,10 +6,14 @@ class CalculateDailyStatsJob < ApplicationJob
 
   def perform(date = Date.yesterday)
     # Calculate stats for all users who played on the given date
-    user_ids = Match.where(played_at: date.all_day).distinct.pluck(:user_id)
-    
+    # Match 表没有 user_id，通过 MatchPlayer 关联查询
+    user_ids = MatchPlayer.joins(:match)
+                          .where(matches: { played_at: date.all_day })
+                          .distinct
+                          .pluck(:user_id)
+
     Rails.logger.info "Calculating daily stats for #{user_ids.count} users on #{date}"
-    
+
     calculated = 0
     errors = 0
 
@@ -24,7 +28,7 @@ class CalculateDailyStatsJob < ApplicationJob
     end
 
     Rails.logger.info "Daily stats calculated: #{calculated} users, #{errors} errors"
-    
+
     {
       date: date,
       calculated: calculated,
