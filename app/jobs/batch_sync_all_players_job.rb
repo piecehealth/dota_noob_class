@@ -57,14 +57,22 @@ class BatchSyncAllPlayersJob < ApplicationJob
             end
           end
 
-          # Retry with remaining valid users
+          # Retry with remaining valid users (reload to get updated dota2_player_id)
           valid_users = batch_users.reject { |u| invalid_ids.include?(u.dota2_player_id.to_s) }
           if valid_users.any?
+            # Reload users to get fresh dota2_player_id (some may have been cleared)
+            valid_users = User.where(id: valid_users.map(&:id))
             valid_map = valid_users.index_by { |u| u.dota2_player_id.to_s }
-            valid_ids = valid_map.keys
+            valid_ids = valid_map.keys.compact
+            
+            if valid_ids.empty?
+              puts "[BatchSync] - 无有效用户可重试"
+              next
+            end
+            
             valid_info_list = valid_users.map { |u| "#{u.classroom&.number}班#{u.group&.number}组#{u.display_name}" }
             Rails.logger.info "[BatchSync] 重试有效用户: #{valid_info_list.join(', ')}"
-            puts "[BatchSync] 重试有效用户 (#{valid_users.size}个)..."
+            puts "[BatchSync] 重试有效用户 (#{valid_ids.size}个)..."
             begin
               api.batch_sync_players(valid_ids, since_days: since_days, users_by_steam_id: valid_map)
               processed += valid_ids.size

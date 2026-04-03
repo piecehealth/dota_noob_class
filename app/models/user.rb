@@ -13,7 +13,6 @@ class User < ApplicationRecord
   validates :display_name, presence: true
   validates :username, presence: true, uniqueness: true
   validates :password, length: { minimum: 6 }, allow_nil: true
-  validates :dota2_player_id, presence: true, unless: :admin?
 
   enum :role, { student: 0, coach: 1, assistant: 2 }
 

@@ -20,11 +20,11 @@
               options_for_select(@groups.map { |g| ["#{g.number}组", g.id] }, params[:group_id]),
               { include_blank: "全部" },
               class: "select select-bordered select-sm w-28",
-              disabled: @groups.empty? %>
+              disabled: @groups.empty?,
+              onchange: "this.form.submit()" %>
         </div>
         
         <div class="flex items-center gap-2 ml-auto">
-          <%= f.submit "筛选", class: "btn btn-primary btn-sm" %>
           <%= link_to "清除", matches_path, class: "btn btn-ghost btn-sm" if params[:classroom_id].present? || params[:group_id].present? %>
         </div>
       <% end %>

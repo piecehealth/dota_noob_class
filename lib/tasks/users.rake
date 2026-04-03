@@ -32,49 +32,117 @@ namespace :users do
     file_path = ENV["FILE"]
     raise "Please provide FILE=path/to/users.csv" unless file_path
 
-    lines = File.readlines(file_path, chomp: true)
-    headers = lines.shift  # 移除表头
-
     created = 0
     updated = 0
+    skipped = 0
     errors = []
+    
+    # 缓存已创建的班级和小组，避免重复查询
+    classrooms_cache = {}
+    groups_cache = {}
+    usernames_cache = {}
 
-    lines.each do |line|
-      # 解析 CSV 行
-      row = parse_csv_line(line)
+    lines = File.readlines(file_path, chomp: true)
+    header_line = lines.shift  # 移除表头
+    total = lines.size
+
+    lines.each_with_index do |line, index|
+      # 简单解析CSV行
+      fields = line.split(",", -1)  # -1 保留空字段
+      
+      # 确保至少有3个字段
+      while fields.length < 3
+        fields << ""
+      end
+      
+      display_name = fields[0]&.strip
+      class_group = fields[1]&.strip
+      dota_player_id = fields[2]&.strip
+
+      # 跳过空行
+      if display_name.blank?
+        skipped += 1
+        next
+      end
+      
+      # 每50条显示进度
+      if (index + 1) % 50 == 0
+        puts "Progress: #{index + 1}/#{total} (Created: #{created}, Updated: #{updated}, Errors: #{errors.count})"
+      end
 
       begin
-        # 查找或创建班级
-        classroom = nil
-        if row["classroom_number"].present?
-          classroom = Classroom.find_or_create_by!(number: row["classroom_number"]) do |c|
-            c.name = "#{row["classroom_number"]}班"
+        # 解析班级和组（格式：X班Y组）
+        classroom_number = nil
+        group_number = nil
+        
+        if class_group.present?
+          # 匹配格式如 "17班4组"
+          if match = class_group.match(/(\d+)班(\d+)组/)
+            classroom_number = match[1].to_i
+            group_number = match[2].to_i
           end
         end
 
-        # 查找或创建小组
-        group = nil
-        if classroom && row["group_number"].present?
-          group = Group.find_or_create_by!(classroom: classroom, number: row["group_number"])
+        # 查找或创建班级（使用缓存）
+        classroom = nil
+        if classroom_number.present?
+          cache_key = classroom_number
+          classroom = classrooms_cache[cache_key]
+          unless classroom
+            classroom = Classroom.find_or_create_by!(number: classroom_number) do |c|
+              c.name = "#{classroom_number}班"
+            end
+            classrooms_cache[cache_key] = classroom
+          end
         end
 
-        # 查找或初始化用户（按 username 查找）
-        user = User.find_or_initialize_by(username: row["username"])
+        # 查找或创建小组（使用缓存）
+        group = nil
+        if classroom && group_number.present?
+          cache_key = "#{classroom.id}_#{group_number}"
+          group = groups_cache[cache_key]
+          unless group
+            group = Group.find_or_create_by!(classroom: classroom, number: group_number)
+            groups_cache[cache_key] = group
+          end
+        end
+
+        # 生成username（用于登录）
+        username = display_name.downcase.gsub(/[^a-z0-9]/, "_").squeeze("_")
+        username = "student" if username.blank?
+        
+        # 确保username唯一（使用缓存 + 数据库检查）
+        base_username = username
+        counter = 1
+        original_username = username
+        while (usernames_cache[username] || User.exists?(username: username)) && usernames_cache[username] != display_name
+          username = "#{base_username}_#{counter}"
+          counter += 1
+          # 防止无限循环
+          if counter > 1000
+            username = "#{base_username}_#{SecureRandom.hex(4)}"
+            break
+          end
+        end
+        usernames_cache[username] = display_name
+
+        # 查找或初始化用户
+        user = User.find_or_initialize_by(display_name: display_name)
 
         # 设置属性
         user.assign_attributes(
-          display_name: row["display_name"],
-          role: row["role"] || "student",
-          dota2_player_id: row["dota2_player_id"].presence,
+          username: username,
+          role: "student",
+          dota2_player_id: dota_player_id.presence,
           classroom: classroom,
           group: group,
-          is_admin: row["is_admin"] == "true",
+          is_admin: false,
           activation_token: SecureRandom.hex(16)
         )
 
         # 新用户设置密码
         if user.new_record?
-          password = row["password"].presence || SecureRandom.hex(16)
+          password = SecureRandom.hex(16)
           user.password = password
         end
 
@@ -86,14 +154,16 @@ namespace :users do
           updated += 1
         end
       rescue => e
-        errors << { row: row["display_name"], error: e.message }
-        Rails.logger.error "Failed to import user #{row['display_name']}: #{e.message}"
+        errors << { row: display_name, error: e.message }
+        puts "ERROR: #{display_name} - #{e.message}"
       end
     end
 
-    puts "Import completed:"
+    puts "\nImport completed:"
+    puts "  Total lines: #{total}"
     puts "  Created: #{created}"
     puts "  Updated: #{updated}"
+    puts "  Skipped (empty): #{skipped}"
     puts "  Errors: #{errors.count}"
     errors.each { |e| puts "    - #{e[:row]}: #{e[:error]}" }
   end

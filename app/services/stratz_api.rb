@@ -57,15 +57,23 @@ class StratzApi
   def batch_sync_players(steam_account_ids, since_days: 14, users_by_steam_id: {})
     results = {}
 
+    # Filter out invalid steam IDs
+    batch_ids = steam_account_ids.compact.reject { |id| id.to_s.blank? || id.to_s == '0' }
+    
+    if batch_ids.empty?
+      Rails.logger.warn "[StratzApi] batch_sync_players called with no valid steam IDs"
+      return results
+    end
+
     # Calculate start date timestamp
     start_date = since_days.days.ago.to_i
 
-    steam_account_ids.each_slice(BATCH_SIZE) do |batch_ids|
-      query = build_batch_sync_query(batch_ids, start_date)
+    batch_ids.each_slice(BATCH_SIZE) do |slice_ids|
+      query = build_batch_sync_query(slice_ids, start_date)
       response = execute_query(query)
       data = response.dig("data") || {}
 
-      batch_ids.each do |steam_id|
+      slice_ids.each do |steam_id|
         player_data = data["player#{steam_id}"]
         next unless player_data
 
