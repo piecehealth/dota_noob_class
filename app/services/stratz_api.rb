@@ -26,8 +26,16 @@ class StratzApi
   # @return [Hash] { steam_account_id => profile_hash }
   def batch_player_profiles(steam_account_ids)
     results = {}
+    
+    # Filter only valid numeric steam IDs
+    valid_ids = steam_account_ids.map(&:to_s).select { |id| id =~ /^\d+$/ }.map(&:to_i)
+    
+    if valid_ids.empty?
+      Rails.logger.warn "[StratzApi] batch_player_profiles called with no valid steam IDs"
+      return results
+    end
 
-    steam_account_ids.each_slice(BATCH_SIZE) do |batch_ids|
+    valid_ids.each_slice(BATCH_SIZE) do |batch_ids|
       query = build_batch_profiles_query(batch_ids)
       response = execute_query(query)
       data = response.dig("data") || {}
@@ -102,7 +110,10 @@ class StratzApi
   end
 
   def build_batch_profiles_query(steam_ids)
-    players_queries = steam_ids.map do |steam_id|
+    # Ensure all steam_ids are valid integers
+    valid_ids = steam_ids.map(&:to_s).select { |id| id =~ /^\d+$/ }.map(&:to_i)
+    
+    players_queries = valid_ids.map do |steam_id|
       <<~GRAPHQL
         player#{steam_id}: player(steamAccountId: #{steam_id}) {
           steamAccountId
@@ -125,7 +136,10 @@ class StratzApi
   end
 
   def build_batch_sync_query(steam_ids, start_date)
-    players_queries = steam_ids.map do |steam_id|
+    # Ensure all steam_ids are valid integers
+    valid_ids = steam_ids.map(&:to_s).select { |id| id =~ /^\d+$/ }.map(&:to_i)
+    
+    players_queries = valid_ids.map do |steam_id|
       # Use startDateTime to filter matches from the specified date
       <<~GRAPHQL
         player#{steam_id}: player(steamAccountId: #{steam_id}) {

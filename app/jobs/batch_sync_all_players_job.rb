@@ -23,6 +23,19 @@ class BatchSyncAllPlayersJob < ApplicationJob
 
     # Process in batches
     users.each_slice(StratzApi::BATCH_SIZE) do |batch_users|
+      # 先检查并清理不合法的 Steam ID（非纯数字）
+      invalid_format_users = batch_users.select { |u| u.dota2_player_id.to_s !~ /^\d+$/ }
+      invalid_format_users.each do |user|
+        user_info = "#{user.classroom&.number}班#{user.group&.number}组#{user.display_name}"
+        Rails.logger.warn "[BatchSync] #{user_info} Steam ID 格式不合法: #{user.dota2_player_id.inspect}，已清理"
+        puts "[BatchSync] ⚠ #{user_info} Steam ID 格式不合法，已清理"
+        user.update_column(:dota2_player_id, nil)
+        cleaned += 1
+      end
+      
+      # 过滤掉不合法的用户
+      batch_users = batch_users.reject { |u| u.dota2_player_id.nil? }
+      
       # Build mapping for this batch
       batch_map = batch_users.index_by { |u| u.dota2_player_id.to_s }
       batch_ids = batch_map.keys.compact
@@ -107,8 +120,11 @@ class BatchSyncAllPlayersJob < ApplicationJob
     puts "[BatchSync] 更新 #{synced_users.count} 个用户的段位信息..."
 
     synced_users.each_slice(StratzApi::BATCH_SIZE) do |batch_users|
+      # 过滤掉不合法的 Steam ID
+      batch_users = batch_users.select { |u| u.dota2_player_id.to_s =~ /^\d+$/ }
+      
       batch_map = batch_users.index_by { |u| u.dota2_player_id.to_s }
-      batch_ids = batch_map.keys.compact
+      batch_ids = batch_map.keys
 
       next if batch_ids.empty?
 

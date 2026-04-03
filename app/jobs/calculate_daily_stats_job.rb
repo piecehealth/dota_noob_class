@@ -29,6 +29,8 @@ class CalculateDailyStatsJob < ApplicationJob
 
     Rails.logger.info "Daily stats calculated: #{calculated} users, #{errors} errors"
 
+    CalculateWeeklyStatsJob.perform_later
+
     {
       date: date,
       calculated: calculated,
