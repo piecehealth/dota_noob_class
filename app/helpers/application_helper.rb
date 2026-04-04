@@ -45,4 +45,26 @@ module ApplicationHelper
   def lobby_type_badge_class(lobby_type)
     LOBBY_TYPE_BADGE.fetch(lobby_type, "badge-ghost")
   end
+
+  # Format rank number to readable string
+  def format_rank(rank)
+    return "-" if rank.nil? || rank <= 0
+
+    tier = (rank / 10) + 1
+    stars = (rank % 10) + 1
+
+    tier_names = {
+      1 => "先锋",
+      2 => "卫士",
+      3 => "中军",
+      4 => "统帅",
+      5 => "传奇",
+      6 => "万古",
+      7 => "超凡",
+      8 => "冠绝"
+    }
+
+    tier_name = tier_names[tier] || "未知"
+    "#{tier_name} #{stars}⭐"
+  end
 end

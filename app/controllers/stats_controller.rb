@@ -114,7 +114,105 @@ class StatsController < ApplicationController
     @available_users = User.active_students.includes(:classroom, :group).order(:display_name)
   end
 
+  # All students stats with filters and sorting (handled by frontend)
+  def students
+    @classrooms = Classroom.order(:number)
+    @groups = Group.includes(:classroom).order(:classroom_id, :number)
+
+    # Week selection (default to current week)
+    @week_start = params[:week] ? Date.parse(params[:week]) : Date.current.beginning_of_week(:monday)
+    @week_end = @week_start.end_of_week(:sunday)
+
+    # Get available weeks for navigation
+    @available_weeks = Match.where.not(played_at: nil)
+                            .select("DATE(played_at, 'weekday 0', '-6 days') as week_start")
+                            .distinct
+                            .order("week_start DESC")
+                            .map { |m| Date.parse(m.week_start) rescue nil }
+                            .compact
+                            .uniq
+
+    # Add current week if not present
+    current_week = Date.current.beginning_of_week(:monday)
+    @available_weeks.unshift(current_week) unless @available_weeks.include?(current_week)
+
+    # Cache key includes week
+    cache_key = [
+      "students_stats",
+      @week_start.to_s,
+      MatchPlayer.joins(:match).where(matches: { played_at: @week_start.beginning_of_day..@week_end.end_of_day }).maximum(:updated_at)&.to_i || 0
+    ].join(":")
+
+    @students = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
+      calculate_students_stats(@week_start, @week_end)
+    end
+  end
+
   private
+
+  def calculate_students_stats(week_start = nil, week_end = nil)
+    # Preload all data in batches to avoid N+1
+    user_ids = User.student.pluck(:id)
+
+    # Build base query
+    base_query = MatchPlayer.where(user_id: user_ids)
+
+    # Add date filter if provided
+    if week_start && week_end
+      base_query = base_query.joins(:match).where(matches: { played_at: week_start.beginning_of_day..week_end.end_of_day })
+    end
+
+    # Batch fetch match player stats
+    match_stats = base_query
+      .group(:user_id)
+      .select(
+        :user_id,
+        "COUNT(*) as total_matches",
+        "SUM(CASE WHEN won = 1 THEN 1 ELSE 0 END) as wins",
+        "SUM(CASE WHEN won = 0 THEN 1 ELSE 0 END) as losses",
+        "SUM(kills) as kills",
+        "SUM(deaths) as deaths",
+        "SUM(assists) as assists"
+      )
+      .index_by(&:user_id)
+
+    # Fetch users with classroom/group
+    users = User.student.includes(:classroom, :group).to_a
+
+    users.map do |user|
+      stats = match_stats[user.id]
+
+      total_matches = stats ? stats.total_matches.to_i : 0
+      wins = stats ? stats.wins.to_i : 0
+      losses = stats ? stats.losses.to_i : 0
+      kills = stats ? stats.kills.to_i : 0
+      deaths = stats ? stats.deaths.to_i : 0
+      assists = stats ? stats.assists.to_i : 0
+
+      win_rate = total_matches > 0 ? (wins.to_f / total_matches * 100).round(1) : 0
+      kda = deaths > 0 ? ((kills + assists) / deaths.to_f).round(2) : (kills + assists)
+
+      {
+        id: user.id,
+        display_name: user.display_name,
+        classroom_id: user.classroom_id,
+        classroom_number: user.classroom&.number,
+        group_id: user.group_id,
+        group_number: user.group&.number,
+        dota2_player_id: user.dota2_player_id,
+        current_rank: user.current_rank,
+        highest_rank: user.highest_rank,
+        total_matches: total_matches,
+        wins: wins,
+        losses: losses,
+        win_rate: win_rate,
+        kills: kills,
+        deaths: deaths,
+        assists: assists,
+        kda: kda
+      }
+    end.sort_by { |s| -s[:total_matches] }
+  end
 
   def parse_date(date_string)
     return nil if date_string.blank?

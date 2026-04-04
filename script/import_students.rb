@@ -20,7 +20,7 @@ classroom_groups = {}
 lines.each do |line|
   fields = line.split(",", -1)
   next if fields.length < 2
-  
+
   class_group = fields[1]&.strip
   if class_group && match = class_group.match(/(\d+)班(\d+)组/)
     classroom_number = match[1].to_i
@@ -53,36 +53,36 @@ puts "Importing users..."
 lines.each_with_index do |line, index|
   fields = line.split(",", -1)
   next if fields.length < 2
-  
+
   display_name = fields[0]&.strip
   class_group = fields[1]&.strip
   dota_player_id = fields[2]&.strip
-  
+
   next if display_name.blank?
-  
+
   puts "Progress: #{index + 1}/#{lines.size}" if (index + 1) % 100 == 0
-  
+
   begin
     match = class_group&.match(/(\d+)班(\d+)组/)
     next unless match
-    
+
     classroom_number = match[1].to_i
     group_number = match[2].to_i
-    
+
     classroom = classrooms_cache[classroom_number]
     group = groups_cache["#{classroom.id}_#{group_number}"]
-    
+
     # 检查是否已存在
     user_key = "#{classroom_number}_#{group_number}_#{display_name}"
     if existing_users.include?(user_key)
       next
     end
     existing_users << user_key
-    
+
     # 生成 username
     safe_name = display_name.downcase.gsub(/[^a-z0-9]/, "_").squeeze("_").presence || "user"
     username = "#{classroom_number}_#{group_number}_#{safe_name}"
-    
+
     # 确保唯一
     base_username = username
     counter = 1
@@ -90,7 +90,7 @@ lines.each_with_index do |line, index|
       username = "#{base_username}_#{counter}"
       counter += 1
     end
-    
+
     # 创建用户（跳过验证加快导入）
     User.create!(
       username: username,
@@ -103,9 +103,9 @@ lines.each_with_index do |line, index|
       password: SecureRandom.hex(16),
       activation_token: SecureRandom.hex(16)
     )
-    
+
     created += 1
-    
+
   rescue => e
     errors << { line: index + 2, name: display_name, error: e.message }
   end

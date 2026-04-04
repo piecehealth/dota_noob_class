@@ -32,10 +32,10 @@ class BatchSyncAllPlayersJob < ApplicationJob
         user.update_column(:dota2_player_id, nil)
         cleaned += 1
       end
-      
+
       # 过滤掉不合法的用户
       batch_users = batch_users.reject { |u| u.dota2_player_id.nil? }
-      
+
       # Build mapping for this batch
       batch_map = batch_users.index_by { |u| u.dota2_player_id.to_s }
       batch_ids = batch_map.keys.compact
@@ -77,12 +77,12 @@ class BatchSyncAllPlayersJob < ApplicationJob
             valid_users = User.where(id: valid_users.map(&:id))
             valid_map = valid_users.index_by { |u| u.dota2_player_id.to_s }
             valid_ids = valid_map.keys.compact
-            
+
             if valid_ids.empty?
               puts "[BatchSync] - 无有效用户可重试"
               next
             end
-            
+
             valid_info_list = valid_users.map { |u| "#{u.classroom&.number}班#{u.group&.number}组#{u.display_name}" }
             Rails.logger.info "[BatchSync] 重试有效用户: #{valid_info_list.join(', ')}"
             puts "[BatchSync] 重试有效用户 (#{valid_ids.size}个)..."
@@ -122,7 +122,7 @@ class BatchSyncAllPlayersJob < ApplicationJob
     synced_users.each_slice(StratzApi::BATCH_SIZE) do |batch_users|
       # 过滤掉不合法的 Steam ID
       batch_users = batch_users.select { |u| u.dota2_player_id.to_s =~ /^\d+$/ }
-      
+
       batch_map = batch_users.index_by { |u| u.dota2_player_id.to_s }
       batch_ids = batch_map.keys
 

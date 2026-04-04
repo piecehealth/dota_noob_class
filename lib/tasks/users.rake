@@ -20,7 +20,7 @@ namespace :users do
         is_admin = user.is_admin
         password = ""  # 密码不导出
 
-        f.puts [display_name, username, role, dota_id, classroom_num, group_num, is_admin, password].join(",")
+        f.puts [ display_name, username, role, dota_id, classroom_num, group_num, is_admin, password ].join(",")
       end
     end
 
@@ -133,8 +133,8 @@ namespace :users do
     end
     fields << current
 
-    headers = ["display_name", "username", "role", "dota2_player_id",
-               "classroom_number", "group_number", "is_admin", "password"]
+    headers = [ "display_name", "username", "role", "dota2_player_id",
+               "classroom_number", "group_number", "is_admin", "password" ]
     headers.each_with_index do |h, i|
       result[h] = fields[i]&.strip || ""
     end

@@ -6,9 +6,18 @@
           <%= entry.rank <= 3 ? ["🥇", "🥈", "🥉"][entry.rank - 1] : "##{entry.rank}" %>
         </div>
         <div class="flex-1 min-w-0">
-          <span class="font-medium truncate block"><%= entry.entity_name %></span>
+          <% if entry.entity_type == "User" && entry.entity %>
+            <%= link_to entry.entity_name, matches_user_path(entry.entity), class: "font-medium truncate block link link-primary" %>
+          <% else %>
+            <span class="font-medium truncate block"><%= entry.entity_name %></span>
+          <% end %>
           <div class="text-xs opacity-50">
-            <%= entry.classroom&.name %> <%= entry.group&.number %>组
+            <% if entry.classroom %>
+              <%= link_to "#{entry.classroom.name}", classroom_stats_path(entry.classroom), class: "hover:underline" %>
+            <% end %>
+            <% if entry.group %>
+              <%= link_to "#{entry.group.number}组", group_stats_path(entry.group), class: "hover:underline" %>
+            <% end %>
             <% if entry.details %>
               · <%= entry.details['kills'] %>/<%= entry.details['deaths'] %>/<%= entry.details['assists'] %>
               (<%= entry.details['match_count'] %>场)

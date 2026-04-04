@@ -23,6 +23,7 @@ Rails.application.routes.draw do
       get :weekly
       get :ranks
       get :compare
+      get :students
     end
   end
 

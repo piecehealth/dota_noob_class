@@ -1,0 +1,170 @@
+<div class="container mx-auto p-4" data-controller="student-stats">
+  <!-- Header with Week Navigation -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+    <h1 class="text-2xl font-bold">👥 学员统计</h1>
+    
+    <!-- Week Navigation -->
+    <% current_index = @available_weeks.index(@week_start) %>
+    <div class="join">
+      <% if current_index && current_index < @available_weeks.size - 1 %>
+        <% prev_week = @available_weeks[current_index + 1] %>
+        <%= link_to "← 上一周", students_stats_path(week: prev_week), class: "btn btn-sm join-item" %>
+      <% end %>
+      
+      <% if current_index && current_index > 0 %>
+        <% next_week = @available_weeks[current_index - 1] %>
+        <%= link_to "下一周 →", students_stats_path(week: next_week), class: "btn btn-sm join-item" %>
+      <% elsif @week_start < Date.current.beginning_of_week(:monday) %>
+        <%= link_to "本周 →", students_stats_path, class: "btn btn-sm join-item" %>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Week Info -->
+  <p class="text-sm opacity-60 mb-4">
+    <%= @week_start.year %>年<%= @week_start.month %>月<%= @week_start.day %>日 - 
+    <%= @week_end.year %>年<%= @week_end.month %>月<%= @week_end.day %>日
+    (第<%= @week_start.cweek %>周)
+  </p>
+
+  <!-- Filters -->
+  <div class="card bg-base-200 mb-4">
+    <div class="card-body py-4">
+      <div class="flex flex-wrap items-center gap-4">
+        <!-- Classroom Filter -->
+        <div class="flex items-center gap-2">
+          <label class="text-sm whitespace-nowrap">班级:</label>
+          <select data-student-stats-target="classroomFilter" 
+                  data-action="change->student-stats#filter"
+                  class="select select-bordered select-sm w-32">
+            <option value="">全部班级</option>
+            <% @classrooms.each do |classroom| %>
+              <option value="<%= classroom.id %>"><%= classroom.number %>班</option>
+            <% end %>
+          </select>
+        </div>
+
+        <!-- Group Filter -->
+        <div class="flex items-center gap-2">
+          <label class="text-sm whitespace-nowrap">小组:</label>
+          <select data-student-stats-target="groupFilter" 
+                  data-action="change->student-stats#filter"
+                  class="select select-bordered select-sm w-32"
+                  disabled>
+            <option value="">请先选择班级</option>
+            <% @groups.each do |group| %>
+              <option value="<%= group.id %>" data-classroom="<%= group.classroom_id %>" style="display: none;">
+                <%= group.number %>组
+              </option>
+            <% end %>
+          </select>
+        </div>
+
+        <!-- Stats Summary -->
+        <div class="ml-auto text-sm opacity-70">
+          显示 <span data-student-stats-target="visibleCount">0</span> / <%= @students.size %> 人
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="card bg-base-200 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="table table-sm">
+        <thead>
+          <tr class="bg-base-300">
+            <th>Player ID</th>
+            <th class="cursor-pointer hover:bg-base-200" data-action="click->student-stats#sort" data-sort="display_name">
+              学员 <span class="text-xs opacity-50">↕</span>
+            </th>
+            <th class="cursor-pointer hover:bg-base-200" data-action="click->student-stats#sort" data-sort="classroom_number">
+              班级 <span class="text-xs opacity-50">↕</span>
+            </th>
+            <th class="cursor-pointer hover:bg-base-200" data-action="click->student-stats#sort" data-sort="group_number">
+              小组 <span class="text-xs opacity-50">↕</span>
+            </th>
+            <th class="cursor-pointer hover:bg-base-200 text-right" data-action="click->student-stats#sort" data-sort="current_rank">
+              当前段位 <span class="text-xs opacity-50">↕</span>
+            </th>
+            <th class="cursor-pointer hover:bg-base-200 text-right" data-action="click->student-stats#sort" data-sort="highest_rank">
+              最高段位 <span class="text-xs opacity-50">↕</span>
+            </th>
+            <th class="cursor-pointer hover:bg-base-200 text-right" data-action="click->student-stats#sort" data-sort="total_matches">
+              总场次 <span class="text-xs opacity-50">↕</span>
+            </th>
+            <th class="cursor-pointer hover:bg-base-200 text-right" data-action="click->student-stats#sort" data-sort="wins">
+              胜场 <span class="text-xs opacity-50">↕</span>
+            </th>
+            <th class="cursor-pointer hover:bg-base-200 text-right" data-action="click->student-stats#sort" data-sort="win_rate">
+              胜率 <span class="text-xs opacity-50">↕</span>
+            </th>
+            <th class="cursor-pointer hover:bg-base-200 text-right" data-action="click->student-stats#sort" data-sort="kda">
+              KDA <span class="text-xs opacity-50">↕</span>
+            </th>
+            <th class="cursor-pointer hover:bg-base-200 text-right" data-action="click->student-stats#sort" data-sort="kills">
+              击杀 <span class="text-xs opacity-50">↕</span>
+            </th>
+            <th class="cursor-pointer hover:bg-base-200 text-right" data-action="click->student-stats#sort" data-sort="deaths">
+              死亡 <span class="text-xs opacity-50">↕</span>
+            </th>
+            <th class="cursor-pointer hover:bg-base-200 text-right" data-action="click->student-stats#sort" data-sort="assists">
+              助攻 <span class="text-xs opacity-50">↕</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody data-student-stats-target="tableBody">
+          <% @students.each do |student| %>
+            <tr data-student-stats-target="row" 
+                data-classroom-id="<%= student[:classroom_id] %>"
+                data-group-id="<%= student[:group_id] %>"
+                data-display-name="<%= student[:display_name] %>"
+                data-classroom-number="<%= student[:classroom_number] || 0 %>"
+                data-group-number="<%= student[:group_number] || 0 %>"
+                data-current-rank="<%= student[:current_rank] || 0 %>"
+                data-highest-rank="<%= student[:highest_rank] || 0 %>"
+                data-total-matches="<%= student[:total_matches] %>"
+                data-wins="<%= student[:wins] %>"
+                data-win-rate="<%= student[:win_rate] %>"
+                data-kda="<%= student[:kda] %>"
+                data-kills="<%= student[:kills] %>"
+                data-deaths="<%= student[:deaths] %>"
+                data-assists="<%= student[:assists] %>">
+              <td class="font-mono text-xs opacity-70">
+                <%= student[:dota2_player_id] || '-' %>
+              </td>
+              <td>
+                <%= link_to student[:display_name], matches_user_path(student[:id]), class: "link link-primary" %>
+              </td>
+              <td>
+                <% if student[:classroom_id] %>
+                  <%= link_to "#{student[:classroom_number]}班", classroom_stats_path(student[:classroom_id]), class: "hover:underline" %>
+                <% else %>
+                  -
+                <% end %>
+              </td>
+              <td>
+                <% if student[:group_id] %>
+                  <%= link_to "#{student[:group_number]}组", group_stats_path(student[:group_id]), class: "hover:underline" %>
+                <% else %>
+                  -
+                <% end %>
+              </td>
+              <td class="text-right"><%= format_rank(student[:current_rank]) %></td>
+              <td class="text-right"><%= format_rank(student[:highest_rank]) %></td>
+              <td class="text-right font-bold"><%= student[:total_matches] %></td>
+              <td class="text-right text-success"><%= student[:wins] %></td>
+              <td class="text-right"><%= student[:win_rate] %>%</td>
+              <td class="text-right font-mono <%= student[:kda] >= 3 ? 'text-success' : (student[:kda] >= 2 ? 'text-warning' : 'text-error') %>">
+                <%= student[:kda] %>
+              </td>
+              <td class="text-right"><%= student[:kills] %></td>
+              <td class="text-right"><%= student[:deaths] %></td>
+              <td class="text-right"><%= student[:assists] %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
