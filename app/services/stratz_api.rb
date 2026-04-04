@@ -342,18 +342,30 @@ class StratzApi
   # Returns: "advantage", "even", "disadvantage", or nil
   def calculate_lane_outcome(player_data, match)
     lane = player_data["lane"]
+    position = player_data["position"]
     is_radiant = player_data["isRadiant"]
 
-    # Map lane to outcome field
+    # Map lane/position to outcome field
+    # Stratz uses both lane names and position numbers
     outcome_field = case lane
-    when "SAFE_LANE"
+    when "SAFE_LANE", "POSITION_1", "POSITION_5"
       is_radiant ? "bottomLaneOutcome" : "topLaneOutcome"
-    when "OFF_LANE"
+    when "OFF_LANE", "POSITION_3", "POSITION_4"
       is_radiant ? "topLaneOutcome" : "bottomLaneOutcome"
-    when "MID_LANE"
+    when "MID_LANE", "POSITION_2"
       "midLaneOutcome"
     else
-      return nil
+      # Fallback: use position if lane is not recognized
+      case position
+      when 1, 5
+        is_radiant ? "bottomLaneOutcome" : "topLaneOutcome"
+      when 2
+        "midLaneOutcome"
+      when 3, 4
+        is_radiant ? "topLaneOutcome" : "bottomLaneOutcome"
+      else
+        return nil
+      end
     end
 
     outcome = match[outcome_field]
