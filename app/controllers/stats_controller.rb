@@ -136,16 +136,8 @@ class StatsController < ApplicationController
     current_week = Date.current.beginning_of_week(:monday)
     @available_weeks.unshift(current_week) unless @available_weeks.include?(current_week)
 
-    # Cache key includes week
-    cache_key = [
-      "students_stats",
-      @week_start.to_s,
-      MatchPlayer.joins(:match).where(matches: { played_at: @week_start.beginning_of_day..@week_end.end_of_day }).maximum(:updated_at)&.to_i || 0
-    ].join(":")
-
-    @students = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
-      calculate_students_stats(@week_start, @week_end)
-    end
+    # Calculate stats directly (N+1 already optimized)
+    @students = calculate_students_stats(@week_start, @week_end)
   end
 
   private
