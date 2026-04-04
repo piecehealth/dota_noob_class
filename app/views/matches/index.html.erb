@@ -54,10 +54,10 @@
                   <%= mp.match.played_at&.in_time_zone('Beijing')&.strftime("%m-%d %H:%M") %>
                 </div>
                 <div class="flex gap-1 mt-1">
-                  <span class="badge badge-ghost badge-xs"><%= mp.match.lobby_type_name %></span>
-                  <span class="badge badge-ghost badge-xs"><%= mp.match.duration_formatted %></span>
+                  <span class="badge badge-ghost badge-xs whitespace-nowrap"><%= mp.match.lobby_type_name %></span>
+                  <span class="badge badge-ghost badge-xs whitespace-nowrap"><%= mp.match.duration_formatted %></span>
                   <% if mp.party_size && mp.party_size > 1 %>
-                    <span class="badge badge-primary badge-xs"><%= mp.party_size %>排</span>
+                    <span class="badge badge-primary badge-xs whitespace-nowrap"><%= mp.party_size %>排</span>
                   <% end %>
                 </div>
               </td>
@@ -83,11 +83,11 @@
                 <% end %>
                 <div class="flex gap-1 mt-1">
                   <% if mp.on_radiant %>
-                    <span class="badge badge-warning badge-xs">天辉</span>
+                    <span class="badge badge-warning badge-xs whitespace-nowrap">天辉</span>
                   <% else %>
-                    <span class="badge badge-info badge-xs">夜魇</span>
+                    <span class="badge badge-info badge-xs whitespace-nowrap">夜魇</span>
                   <% end %>
-                  <span class="badge badge-outline badge-xs"><%= mp.position_role %></span>
+                  <span class="badge badge-outline badge-xs whitespace-nowrap"><%= mp.position_role %></span>
                 </div>
               </td>
 
@@ -105,10 +105,10 @@
                     </div>
                     <div class="flex gap-1 mt-0.5">
                       <% if mp.lane_outcome %>
-                        <span class="badge <%= mp.lane_outcome_badge_class %> badge-xs"><%= mp.lane_outcome_name %></span>
+                        <span class="badge <%= mp.lane_outcome_badge_class %> badge-xs whitespace-nowrap"><%= mp.lane_outcome_name %></span>
                       <% end %>
                       <% if mp.award.present? && mp.award != "NONE" %>
-                        <span class="badge <%= mp.award_badge_class %> badge-xs"><%= mp.award_text %></span>
+                        <span class="badge <%= mp.award_badge_class %> badge-xs whitespace-nowrap"><%= mp.award_text %></span>
                       <% end %>
                     </div>
                   </div>
@@ -117,7 +117,7 @@
 
               <!-- 结果 -->
               <td>
-                <div class="badge <%= mp.won ? 'badge-success' : 'badge-error' %> badge-lg">
+                <div class="badge <%= mp.won ? 'badge-success' : 'badge-error' %> badge-lg whitespace-nowrap">
                   <%= mp.won ? '胜' : '负' %>
                 </div>
               </td>

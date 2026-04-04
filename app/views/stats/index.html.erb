@@ -67,7 +67,7 @@
       <h2 class="card-title mb-4">📈 段位分布</h2>
       <div class="flex flex-wrap gap-2">
         <% @rank_distribution.each do |tier, count| %>
-          <div class="badge badge-lg badge-primary">
+          <div class="badge badge-lg badge-primary whitespace-nowrap">
             <%= tier %>: <%= count %>
           </div>
         <% end %>
