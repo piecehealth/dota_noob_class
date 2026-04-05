@@ -53,6 +53,7 @@ class BatchSyncAllPlayersJob < ApplicationJob
         processed += batch_ids.size
         Rails.logger.info "[BatchSync] 成功同步 #{batch_ids.size} 个用户"
         puts "[BatchSync] ✓ 成功同步 #{batch_ids.size} 个用户"
+        sleep 1
       rescue StratzApi::ApiError => e
         if e.message.include?("missing or anonymous")
           # Extract invalid Steam IDs from error message
@@ -112,14 +113,10 @@ class BatchSyncAllPlayersJob < ApplicationJob
       end
     end
 
-    # Update ranks for successfully synced users
-    synced_user_ids = MatchPlayer.where("created_at >= ?", 5.minutes.ago).select(:user_id).distinct.pluck(:user_id)
-    synced_users = User.where(id: synced_user_ids)
+    Rails.logger.info "[BatchSync] 更新 #{users.count} 个用户的段位信息..."
+    puts "[BatchSync] 更新 #{users.count} 个用户的段位信息..."
 
-    Rails.logger.info "[BatchSync] 更新 #{synced_users.count} 个用户的段位信息..."
-    puts "[BatchSync] 更新 #{synced_users.count} 个用户的段位信息..."
-
-    synced_users.each_slice(StratzApi::BATCH_SIZE) do |batch_users|
+    users.each_slice(StratzApi::BATCH_SIZE) do |batch_users|
       # 过滤掉不合法的 Steam ID
       batch_users = batch_users.select { |u| u.dota2_player_id.to_s =~ /^\d+$/ }
 
@@ -141,6 +138,7 @@ class BatchSyncAllPlayersJob < ApplicationJob
             RankSnapshot.capture_for_user(user, profile)
           end
         end
+        sleep 1
       rescue => e
         Rails.logger.error "[BatchSync] 更新段位失败: #{e.message}"
       end

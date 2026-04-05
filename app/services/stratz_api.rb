@@ -108,7 +108,9 @@ class StratzApi
   private
 
   def default_token
-     ENV["STRATZ_API_TOKEN"] || Rails.application.credentials.stratz_token
+    Rails.application.credentials.stratz_token if Rails.env.production?
+
+    ENV["STRATZ_API_TOKEN"]
   end
 
   def build_batch_profiles_query(steam_ids)

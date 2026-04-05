@@ -55,8 +55,7 @@ class RankSnapshot < ApplicationRecord
   # Class methods for statistics
   class << self
     # Capture current rank for a user
-    def capture_for_user(user, profile_data = nil)
-      profile_data ||= StratzApi.new.player_profile(user.dota2_player_id)
+    def capture_for_user(user, profile_data)
       return nil if profile_data.nil?
 
       create!(
