@@ -132,7 +132,7 @@ class BatchSyncAllPlayersJob < ApplicationJob
           user = batch_map[player_id]
           next unless user
 
-          profile = profiles[player_id]
+          profile = profiles[player_id.to_i]
           if profile
             update_user_rank(user, profile)
             RankSnapshot.capture_for_user(user, profile)
