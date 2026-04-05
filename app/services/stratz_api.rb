@@ -27,7 +27,7 @@ class StratzApi
   def batch_player_profiles(steam_account_ids)
     results = {}
 
-    # Filter only valid numeric steam IDs
+    # Filter valid numeric Steam IDs (32-bit)
     valid_ids = steam_account_ids.map(&:to_s).select { |id| id =~ /^\d+$/ }.map(&:to_i)
 
     if valid_ids.empty?
@@ -37,7 +37,8 @@ class StratzApi
 
     valid_ids.each_slice(BATCH_SIZE) do |batch_ids|
       query = build_batch_profiles_query(batch_ids)
-      response = execute_query(query)
+      steam_ids = batch_ids.join(",")
+      response = execute_query(query, context: "batch_player_profiles: #{steam_ids}")
       data = response.dig("data") || {}
 
       batch_ids.each do |steam_id|
@@ -65,7 +66,7 @@ class StratzApi
   def batch_sync_players(steam_account_ids, since_days: 14, users_by_steam_id: {})
     results = {}
 
-    # Filter out invalid steam IDs
+    # Filter out invalid steam IDs (32-bit)
     batch_ids = steam_account_ids.compact.reject { |id| id.to_s.blank? || id.to_s == "0" }
 
     if batch_ids.empty?
@@ -78,7 +79,8 @@ class StratzApi
 
     batch_ids.each_slice(BATCH_SIZE) do |slice_ids|
       query = build_batch_sync_query(slice_ids, start_date)
-      response = execute_query(query)
+      steam_ids = slice_ids.join(",")
+      response = execute_query(query, context: "batch_sync_players: #{steam_ids}")
       data = response.dig("data") || {}
 
       slice_ids.each do |steam_id|
@@ -106,11 +108,11 @@ class StratzApi
   private
 
   def default_token
-    Rails.application.credentials.stratz_token || ENV["STRATZ_API_TOKEN"]
+     ENV["STRATZ_API_TOKEN"] || Rails.application.credentials.stratz_token
   end
 
   def build_batch_profiles_query(steam_ids)
-    # Ensure all steam_ids are valid integers
+    # Use original 32-bit Steam IDs
     valid_ids = steam_ids.map(&:to_s).select { |id| id =~ /^\d+$/ }.map(&:to_i)
 
     players_queries = valid_ids.map do |steam_id|
@@ -136,7 +138,7 @@ class StratzApi
   end
 
   def build_batch_sync_query(steam_ids, start_date)
-    # Ensure all steam_ids are valid integers
+    # Use original 32-bit Steam IDs
     valid_ids = steam_ids.map(&:to_s).select { |id| id =~ /^\d+$/ }.map(&:to_i)
 
     players_queries = valid_ids.map do |steam_id|
@@ -189,7 +191,7 @@ class StratzApi
     "query { #{players_queries.join("\n")} }"
   end
 
-  def execute_query(query)
+  def execute_query(query, context: nil)
     uri = URI(API_ENDPOINT)
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
@@ -208,14 +210,31 @@ class StratzApi
     when 200
       parse_response(response.body)
     when 429
+      log_api_error("StratzAPI", "RateLimit", "Rate limit exceeded", context)
       raise RateLimitError, "Rate limit exceeded"
     else
-      raise ApiError, "HTTP #{response.code}: #{response.body}"
+      error_msg = "HTTP #{response.code}: #{response.body}"
+      log_api_error("StratzAPI", "HTTP#{response.code}", error_msg, context)
+      raise ApiError, error_msg
     end
-  rescue Net::OpenTimeout, Net::ReadTimeout
+  rescue Net::OpenTimeout, Net::ReadTimeout => e
+    log_api_error("StratzAPI", "Timeout", e.message, context)
     raise Error, "Request timeout"
   rescue SocketError, Errno::ECONNREFUSED => e
+    log_api_error("StratzAPI", "Connection", e.message, context)
     raise Error, "Connection error: #{e.message}"
+  end
+
+  def log_api_error(api_name, error_type, error_message, context = nil)
+    ::ApiError.create(
+      api_name: api_name,
+      error_type: error_type,
+      error_message: error_message,
+      context: context
+    )
+  rescue => e
+    # 如果记录错误失败，至少打印到日志
+    Rails.logger.error "[ApiError] Failed to log error: #{e.message}"
   end
 
   def parse_response(body)

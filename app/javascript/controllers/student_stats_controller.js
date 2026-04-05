@@ -25,6 +25,9 @@ export default class extends Controller {
         opt.style.display = opt.dataset.classroom === classroomId ? '' : 'none'
         if (opt.selected && opt.style.display === 'none') opt.selected = false
       })
+      
+      // 重新获取 groupId（可能已被清空）
+      groupId = this.groupFilterTarget.value
     } else {
       this.groupFilterTarget.disabled = true
       this.groupFilterTarget.value = ''
