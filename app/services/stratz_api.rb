@@ -108,7 +108,7 @@ class StratzApi
   private
 
   def default_token
-    Rails.application.credentials.stratz_token if Rails.env.production?
+    return Rails.application.credentials.stratz_token if Rails.env.production?
 
     ENV["STRATZ_API_TOKEN"]
   end
