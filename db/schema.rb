@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_04_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_06_052443) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -186,6 +186,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_04_000001) do
     t.integer "group_id"
     t.integer "highest_rank", default: 0
     t.boolean "is_admin", default: false, null: false
+    t.boolean "is_dota2_id_invalid", default: false, null: false
     t.string "password_digest", null: false
     t.datetime "rank_updated_at"
     t.integer "role", default: 0, null: false

@@ -50,6 +50,10 @@ module ApplicationHelper
   def format_rank(rank)
     return "-" if rank.nil? || rank <= 0
 
+    if rank >= 80
+      return "冠绝 ⭐⭐⭐"
+    end
+
     tier = (rank / 10) + 1
     stars = (rank % 10) + 1
 

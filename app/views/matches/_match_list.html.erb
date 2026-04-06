@@ -16,8 +16,9 @@
           <tr class="<%= mp.won ? 'bg-success/10' : 'bg-error/10' %>">
             <!-- 对局信息 -->
             <td class="whitespace-nowrap">
-              <div class="text-xs font-mono opacity-70">
+              <div class="text-xs font-mono opacity-70 flex items-center gap-2">
                 <%= link_to match.match_id, match_path(match), class: "hover:underline" %>
+                <%= link_to "Stratz →", "https://stratz.com/matches/#{match.match_id}", target: "_blank", class: "link link-primary text-xs" %>
               </div>
               <div class="text-xs opacity-50">
                 <%= match.played_at&.in_time_zone('Beijing')&.strftime("%m-%d %H:%M") %>

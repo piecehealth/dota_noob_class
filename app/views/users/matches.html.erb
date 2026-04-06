@@ -4,7 +4,12 @@
     <%= link_to "←", :back, class: "btn btn-ghost btn-sm" %>
     <div>
       <h1 class="text-2xl font-bold"><%= @student.display_name %></h1>
-      <p class="text-xs opacity-50 font-mono">Player ID: <%= @student.dota2_player_id %></p>
+      <p class="text-xs opacity-50 font-mono">
+        Player ID: <%= @student.dota2_player_id %>
+        <% if @student.dota2_player_id.present? %>
+          · <%= link_to "Stratz →", "https://stratz.com/players/#{@student.dota2_player_id}", target: "_blank", class: "link link-primary" %>
+        <% end %>
+      </p>
     </div>
   </div>
 

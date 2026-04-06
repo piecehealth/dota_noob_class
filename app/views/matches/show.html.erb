@@ -5,7 +5,10 @@
 
   <div class="card bg-base-200 mb-6">
     <div class="card-body">
-      <h1 class="card-title text-2xl">对局 #<%= @match.match_id %></h1>
+      <div class="flex items-center justify-between">
+        <h1 class="card-title text-2xl">对局 #<%= @match.match_id %></h1>
+        <%= link_to "Stratz →", "https://stratz.com/matches/#{@match.match_id}", target: "_blank", class: "link link-primary text-sm" %>
+      </div>
       <div class="flex gap-4 text-sm opacity-70">
         <span>⏱️ <%= @match.duration_formatted %></span>
         <span>📅 <%= @match.played_at&.in_time_zone('Beijing')&.strftime("%Y-%m-%d %H:%M") %></span>

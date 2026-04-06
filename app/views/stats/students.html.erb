@@ -131,7 +131,11 @@
                 data-deaths="<%= student[:deaths] %>"
                 data-assists="<%= student[:assists] %>">
               <td class="font-mono text-xs opacity-70">
-                <%= student[:dota2_player_id] || '-' %>
+                <% if student[:dota2_player_id].present? %>
+                  <%= link_to student[:dota2_player_id], "https://stratz.com/players/#{student[:dota2_player_id]}", target: "_blank", class: "hover:underline" %>
+                <% else %>
+                  -
+                <% end %>
               </td>
               <td>
                 <%= link_to student[:display_name], matches_user_path(student[:id]), class: "link link-primary" %>
