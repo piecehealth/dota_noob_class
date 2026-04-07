@@ -8,7 +8,7 @@ class BatchSyncAllPlayersJob < ApplicationJob
 
   retry_on StratzApi::RateLimitError, wait: 1.minute, attempts: 3
 
-  def perform(since_days: 14)
+  def perform(since_days: 7)
     users = User.active_students
     total_users = users.count
 

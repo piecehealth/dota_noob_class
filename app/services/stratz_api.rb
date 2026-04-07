@@ -13,8 +13,8 @@ class StratzApi
   API_ENDPOINT = "https://api.stratz.com/graphql"
   USER_AGENT = "STRATZ_API"
 
-  # Batch size for bulk queries (Stratz API supports up to 50 players per request)
-  BATCH_SIZE = 50
+  # Batch size for bulk queries (Stratz API supports up to 20 players per request)
+  BATCH_SIZE = 20
 
   def initialize(token = nil)
     @token = token || default_token
