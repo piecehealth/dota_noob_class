@@ -9,7 +9,7 @@ class CreateApiErrors < ActiveRecord::Migration[8.1]
       t.string :context
       t.timestamps
     end
-    
+
     add_index :api_errors, :created_at
     add_index :api_errors, :api_name
   end

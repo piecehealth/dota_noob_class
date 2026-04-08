@@ -16,9 +16,9 @@ class User < ApplicationRecord
 
   enum :role, { student: 0, coach: 1, assistant: 2 }
 
-  scope :students_with_dota_id, -> { where.not(dota2_player_id: nil).where(is_dota2_id_invalid: [nil, false]) }
-  scope :active_students, -> { where.not(dota2_player_id: nil).where(is_dota2_id_invalid: [nil, false]) }
-  scope :student, -> { where.not(dota2_player_id: nil).where(is_dota2_id_invalid: [nil, false]) }
+  scope :students_with_dota_id, -> { where.not(dota2_player_id: nil).where(is_dota2_id_invalid: [ nil, false ]) }
+  scope :active_students, -> { where.not(dota2_player_id: nil).where(is_dota2_id_invalid: [ nil, false ]) }
+  scope :student, -> { where.not(dota2_player_id: nil).where(is_dota2_id_invalid: [ nil, false ]) }
 
   def admin? = is_admin?
 
